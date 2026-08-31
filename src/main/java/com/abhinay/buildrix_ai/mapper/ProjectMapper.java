@@ -1,0 +1,18 @@
+package com.abhinay.buildrix_ai.mapper;
+
+import com.abhinay.buildrix_ai.dto.project.ProjectRequest;
+import com.abhinay.buildrix_ai.dto.project.ProjectResponse;
+import com.abhinay.buildrix_ai.dto.project.ProjectSummaryResponse;
+import com.abhinay.buildrix_ai.entity.Project;
+import org.mapstruct.Mapper;
+import org.mapstruct.MappingConstants;
+
+import java.util.List;
+
+@Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
+public interface ProjectMapper {
+
+    ProjectResponse toProjectResponse(Project project);
+    ProjectSummaryResponse toProjectSummaryResponse(Project project);
+    List<ProjectSummaryResponse> toProjectSummaryResponseList(List<Project> project);
+}

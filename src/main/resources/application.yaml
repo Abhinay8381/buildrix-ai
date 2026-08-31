@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: buildrix-ai
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5431/buildrix-DB}
+    username: ${DB_USER:abhinay}
+    password: ${DB_PASS:Abhinay123}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format-sql: true
+
+  threads:
+    virtual:
+      enabled: true
