@@ -11,15 +11,16 @@ import java.time.Instant;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "projects")
+@Table(name = "projects",
+indexes = {
+        @Index(name = "idx_project_updated_at_desc", columnList = "updated_at desc, deleted_at"),
+        @Index(name = "idx_project_deleted_at", columnList = "deleted_at"),
+        @Index(name = "idx_project_deleted_at_updated_at_desc", columnList = "deleted_at, updated_at desc")
+})
 public class Project extends BaseEntity{
 
     @Column(name = "name", length = 50, nullable = false)
     private String name;
-
-    @ManyToOne
-    @JoinColumn(name = "owner_id", nullable = false)
-    public User owner;
 
     @Builder.Default
     private Boolean isPublic = false;

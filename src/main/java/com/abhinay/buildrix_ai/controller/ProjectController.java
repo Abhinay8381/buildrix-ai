@@ -4,6 +4,7 @@ import com.abhinay.buildrix_ai.dto.project.ProjectRequest;
 import com.abhinay.buildrix_ai.dto.project.ProjectResponse;
 import com.abhinay.buildrix_ai.dto.project.ProjectSummaryResponse;
 import com.abhinay.buildrix_ai.service.ProjectService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,30 +24,30 @@ public class ProjectController {
 
     @GetMapping()
     public ResponseEntity<List<ProjectSummaryResponse>> getAllProjects(){
-        return ResponseEntity.ok(projectService.getAllUserProjects(userId));
+        return ResponseEntity.ok(projectService.getAllUserProjects());
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ProjectResponse> getProject(@PathVariable UUID id){
-        return ResponseEntity.ok(projectService.getProjectById(userId, id));
+        return ResponseEntity.ok(projectService.getProjectById(id));
     }
 
     @PostMapping()
-    public ResponseEntity<ProjectResponse> createProject(@RequestBody  ProjectRequest projectRequest){
+    public ResponseEntity<ProjectResponse> createProject(@Valid @RequestBody  ProjectRequest projectRequest){
         return ResponseEntity.status(201)
-                .body(projectService.createProject(projectRequest, userId));
+                .body(projectService.createProject(projectRequest));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProject(@PathVariable UUID id){
-        projectService.softDeleteProject(userId, id);
+        projectService.softDeleteProject(id);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<ProjectResponse> updateProject(@RequestBody  ProjectRequest projectRequest,
+    public ResponseEntity<ProjectResponse> updateProject(@Valid @RequestBody  ProjectRequest projectRequest,
                                                          @PathVariable UUID id){
-        return ResponseEntity.ok(projectService.updateProject(userId, id, projectRequest));
+        return ResponseEntity.ok(projectService.updateProject(id, projectRequest));
     }
 
 }

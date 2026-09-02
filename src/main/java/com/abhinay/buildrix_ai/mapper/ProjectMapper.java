@@ -1,6 +1,5 @@
 package com.abhinay.buildrix_ai.mapper;
 
-import com.abhinay.buildrix_ai.dto.project.ProjectRequest;
 import com.abhinay.buildrix_ai.dto.project.ProjectResponse;
 import com.abhinay.buildrix_ai.dto.project.ProjectSummaryResponse;
 import com.abhinay.buildrix_ai.entity.Project;

@@ -12,6 +12,7 @@ import com.abhinay.buildrix_ai.mapper.ProjectMemberMapper;
 import com.abhinay.buildrix_ai.reporsitory.ProjectMemberRepository;
 import com.abhinay.buildrix_ai.reporsitory.ProjectRepository;
 import com.abhinay.buildrix_ai.reporsitory.UserRepository;
+import com.abhinay.buildrix_ai.security.AuthUtil;
 import com.abhinay.buildrix_ai.service.ProjectMemberService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,26 +34,23 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
     private final ProjectRepository projectRepository;
     private final ProjectMemberMapper projectMemberMapper;
     private final UserRepository userRepository;
+    private final AuthUtil authUtil;
 
     @Override
-    public List<ProjectMemberResponse> getAllProjectMembers(UUID userId, UUID projectId) {
+    public List<ProjectMemberResponse> getAllProjectMembers(UUID projectId) {
+        UUID userId = authUtil.getCurrentUserId();
         Project project = getAccessibleProjectById(userId, projectId);
-        List<ProjectMemberResponse> projectMembers = new ArrayList<>();
-        projectMembers.add(projectMemberMapper.toProjectMemberResponseFromOwner(project.getOwner()));
-        projectMembers.addAll(projectMemberRepository.findById_ProjectId(projectId)
+        return projectMemberRepository.findById_ProjectId(projectId)
                 .stream()
                 .map(projectMemberMapper::toProjectMemberResponseFromProjectMember)
-                .toList());
-        return projectMembers;
+                .toList();
     }
 
     @Transactional
     @Override
-    public ProjectMemberResponse inviteMember(UUID userId, UUID projectId, InviteMemberRequest request) {
+    public ProjectMemberResponse inviteMember(UUID projectId, InviteMemberRequest request) {
+        UUID userId = authUtil.getCurrentUserId();
         Project project = getAccessibleProjectById(userId, projectId);
-
-        if(!project.getOwner().getId().equals(userId))
-            throw new RuntimeException("Not allowed");
 
         User invitee = userRepository.findByEmail(request.email()).orElseThrow(() ->
                 new ResourceNotFoundException("User", request.email()));
@@ -78,11 +76,9 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
 
     @Transactional
     @Override
-    public ProjectMemberResponse updateMemberRole(UUID userId, UUID projectId, UUID memberId, UpdateProjectMemberRequest request) {
+    public ProjectMemberResponse updateMemberRole(UUID projectId, UUID memberId, UpdateProjectMemberRequest request) {
+        UUID userId = authUtil.getCurrentUserId();
         Project project = getAccessibleProjectById(userId, projectId);
-
-        if(!project.getOwner().getId().equals(userId))
-            throw new RuntimeException("Not allowed");
 
         ProjectMemberId projectMemberId = new ProjectMemberId(projectId, memberId);
         ProjectMember projectMember = projectMemberRepository.findById(projectMemberId)
@@ -95,11 +91,10 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
 
     @Transactional
     @Override
-    public void removeMember(UUID userId, UUID projectId, UUID memberId) {
+    public void removeMember(UUID projectId, UUID memberId) {
+        UUID userId = authUtil.getCurrentUserId();
         Project project = getAccessibleProjectById(userId, projectId);
 
-        if(!project.getOwner().getId().equals(userId))
-            throw new RuntimeException("Not allowed");
 
         ProjectMemberId projectMemberId = new ProjectMemberId(projectId, memberId);
         if(!projectMemberRepository.existsById(projectMemberId))

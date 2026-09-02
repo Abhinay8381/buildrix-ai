@@ -6,6 +6,7 @@ import com.abhinay.buildrix_ai.dto.auth.SignUpRequest;
 import com.abhinay.buildrix_ai.dto.auth.UserProfileResponse;
 import com.abhinay.buildrix_ai.service.AuthService;
 import com.abhinay.buildrix_ai.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,12 +23,12 @@ public class AuthController {
     private static final UUID id = UUID.randomUUID();
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request){
+    public ResponseEntity<AuthResponse> login(@Valid  @RequestBody LoginRequest request){
         return ResponseEntity.ok(authService.login(request));
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<AuthResponse> sigup(@RequestBody SignUpRequest request){
+    public ResponseEntity<AuthResponse> sigup(@Valid @RequestBody SignUpRequest request){
         return ResponseEntity.ok(authService.signup(request));
 
     }

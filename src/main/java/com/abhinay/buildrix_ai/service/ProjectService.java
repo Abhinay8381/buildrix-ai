@@ -8,13 +8,13 @@ import java.util.List;
 import java.util.UUID;
 
 public interface ProjectService {
-    List<ProjectSummaryResponse> getAllUserProjects(UUID userId);
+    List<ProjectSummaryResponse> getAllUserProjects();
 
-    ProjectResponse getProjectById(UUID userId, UUID id);
+    ProjectResponse getProjectById(UUID id);
 
-    ProjectResponse createProject(ProjectRequest projectRequest, UUID userId);
+    ProjectResponse createProject(ProjectRequest projectRequest);
 
-    void softDeleteProject(UUID userId, UUID id);
+    void softDeleteProject(UUID id);
 
-    ProjectResponse updateProject(UUID userId, UUID id, ProjectRequest projectRequest);
+    ProjectResponse updateProject(UUID id, ProjectRequest projectRequest);
 }

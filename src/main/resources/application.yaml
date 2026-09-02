@@ -19,3 +19,6 @@ spring:
   threads:
     virtual:
       enabled: true
+
+jwt:
+  secret-key: dont-use-in-production4135265253735gdrdgr

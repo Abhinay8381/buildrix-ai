@@ -4,11 +4,16 @@ import com.abhinay.buildrix_ai.dto.project.ProjectRequest;
 import com.abhinay.buildrix_ai.dto.project.ProjectResponse;
 import com.abhinay.buildrix_ai.dto.project.ProjectSummaryResponse;
 import com.abhinay.buildrix_ai.entity.Project;
+import com.abhinay.buildrix_ai.entity.ProjectMember;
+import com.abhinay.buildrix_ai.entity.ProjectMemberId;
 import com.abhinay.buildrix_ai.entity.User;
+import com.abhinay.buildrix_ai.enums.ProjectRole;
 import com.abhinay.buildrix_ai.exceptions.ResourceNotFoundException;
 import com.abhinay.buildrix_ai.mapper.ProjectMapper;
+import com.abhinay.buildrix_ai.reporsitory.ProjectMemberRepository;
 import com.abhinay.buildrix_ai.reporsitory.ProjectRepository;
 import com.abhinay.buildrix_ai.reporsitory.UserRepository;
+import com.abhinay.buildrix_ai.security.AuthUtil;
 import com.abhinay.buildrix_ai.service.ProjectService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,16 +34,19 @@ public class ProjectServiceImpl implements ProjectService {
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
     private final ProjectMapper projectMapper;
+    private final ProjectMemberRepository projectMemberRepository;
+    private final AuthUtil authUtil;
 
     @Override
-    public List<ProjectSummaryResponse> getAllUserProjects(UUID ownerId) {
-       return projectMapper.toProjectSummaryResponseList(
-               projectRepository.findAllAccessibleByUser(ownerId));
-
+    public List<ProjectSummaryResponse> getAllUserProjects() {
+        UUID userId = authUtil.getCurrentUserId();
+        return projectMapper.toProjectSummaryResponseList(
+                projectRepository.findAllAccessibleByUser(userId));
     }
 
     @Override
-    public ProjectResponse getProjectById(UUID ownerId, UUID id) {
+    public ProjectResponse getProjectById( UUID id) {
+        UUID ownerId = authUtil.getCurrentUserId();
         Project project = getAccessibleProjectById(ownerId, id);
         return projectRepository.findAccessibleProjectById(ownerId, id)
                 .map(projectMapper::toProjectResponse)
@@ -48,28 +56,36 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Transactional
     @Override
-    public ProjectResponse createProject(ProjectRequest projectRequest, UUID userId) {
-        User owner = findUserById(userId);
+    public ProjectResponse createProject(ProjectRequest projectRequest) {
+        UUID userId = authUtil.getCurrentUserId();
         Project project = Project.builder()
                 .name(projectRequest.name())
-                .owner(owner)
                 .build();
-        projectRepository.save(project);
+        project = projectRepository.save(project);
+
+        ProjectMemberId projectMemberId = new ProjectMemberId(project.getId(), userId);
+        ProjectMember projectMember = ProjectMember.builder()
+                .id(projectMemberId)
+                .role(ProjectRole.OWNER)
+                .invitedAt(Instant.now())
+                .acceptedAt(Instant.now())
+                .build();
+        projectMemberRepository.save(projectMember);
         return projectMapper.toProjectResponse(project);
     }
 
     @Transactional
     @Override
-    public void softDeleteProject(UUID ownerId, UUID id) {
+    public void softDeleteProject(UUID id) {
+        UUID ownerId = authUtil.getCurrentUserId();
         Project project = getAccessibleProjectById(ownerId, id);
-        if(!project.getOwner().getId().equals(ownerId))
-            throw new RuntimeException("User not authorized to updated this project");
        project.setDeletedAt(Instant.now());
     }
 
     @Transactional
     @Override
-    public ProjectResponse updateProject(UUID ownerId, UUID id, ProjectRequest projectRequest) {
+    public ProjectResponse updateProject(UUID id, ProjectRequest projectRequest) {
+        UUID ownerId = authUtil.getCurrentUserId();
         Project project = getAccessibleProjectById(ownerId, id);
         project.setName(projectRequest.name());
         projectRepository.save(project);
