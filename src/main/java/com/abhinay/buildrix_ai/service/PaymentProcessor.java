@@ -3,14 +3,13 @@ package com.abhinay.buildrix_ai.service;
 import com.abhinay.buildrix_ai.dto.billing.subscription.CheckoutRequest;
 import com.abhinay.buildrix_ai.dto.billing.subscription.CheckoutResponse;
 import com.abhinay.buildrix_ai.dto.billing.subscription.PortalResponse;
-import com.abhinay.buildrix_ai.dto.billing.subscription.SubscriptionResponse;
+import com.abhinay.buildrix_ai.entity.Plan;
 
 import java.util.UUID;
 
-public interface SubscriptionService {
-    PortalResponse openCustomerPortal();
+public interface PaymentProcessor {
 
-    CheckoutResponse createCheckout(CheckoutRequest request);
+    public PortalResponse openCustomerPortal();
 
-    SubscriptionResponse getUserSubscription(UUID usedId);
+    public String checkout(Plan plan, UUID userId);
 }

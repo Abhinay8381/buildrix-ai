@@ -22,3 +22,8 @@ spring:
 
 jwt:
   secret-key: dont-use-in-production4135265253735gdrdgr
+
+
+
+client:
+  url: http://localhost:8080

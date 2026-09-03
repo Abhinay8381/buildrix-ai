@@ -17,6 +17,7 @@ import com.abhinay.buildrix_ai.security.AuthUtil;
 import com.abhinay.buildrix_ai.service.ProjectService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,6 +45,7 @@ public class ProjectServiceImpl implements ProjectService {
                 projectRepository.findAllAccessibleByUser(userId));
     }
 
+    @PreAuthorize("@security.canViewProject(#id)")
     @Override
     public ProjectResponse getProjectById( UUID id) {
         UUID ownerId = authUtil.getCurrentUserId();
@@ -62,10 +64,13 @@ public class ProjectServiceImpl implements ProjectService {
                 .name(projectRequest.name())
                 .build();
         project = projectRepository.save(project);
+        User user = userRepository.getReferenceById(userId);
 
         ProjectMemberId projectMemberId = new ProjectMemberId(project.getId(), userId);
         ProjectMember projectMember = ProjectMember.builder()
                 .id(projectMemberId)
+                .project(project)
+                .member(user)
                 .role(ProjectRole.OWNER)
                 .invitedAt(Instant.now())
                 .acceptedAt(Instant.now())
@@ -76,12 +81,14 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Transactional
     @Override
+    @PreAuthorize("@security.canDeleteProject(#id)")
     public void softDeleteProject(UUID id) {
         UUID ownerId = authUtil.getCurrentUserId();
         Project project = getAccessibleProjectById(ownerId, id);
        project.setDeletedAt(Instant.now());
     }
 
+    @PreAuthorize("@security.canEditProject(#id)")
     @Transactional
     @Override
     public ProjectResponse updateProject(UUID id, ProjectRequest projectRequest) {

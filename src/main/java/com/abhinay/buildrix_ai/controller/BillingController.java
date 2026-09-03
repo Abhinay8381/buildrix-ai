@@ -35,14 +35,14 @@ public class BillingController {
         return ResponseEntity.ok(subscriptionService.getUserSubscription(userId));
     }
 
-    @PostMapping("/api/v1/stripe/checkout")
+    @PostMapping("/api/v1/payment/checkout")
     public ResponseEntity<CheckoutResponse> createCheckout(@RequestBody CheckoutRequest request){
         return ResponseEntity.status(200)
-                .body(subscriptionService.createCheckout(userId, request));
+                .body(subscriptionService.createCheckout(request));
     }
 
-    @PostMapping("/api/v1/stripe/portal")
+    @PostMapping("/api/v1/payment/portal")
     public ResponseEntity<PortalResponse> openPaymentPortal(){
-        return ResponseEntity.ok(subscriptionService.openCustomerPortal(userId));
+        return ResponseEntity.ok(subscriptionService.openCustomerPortal());
     }
 }

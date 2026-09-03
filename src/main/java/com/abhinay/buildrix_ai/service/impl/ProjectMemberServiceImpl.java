@@ -16,6 +16,7 @@ import com.abhinay.buildrix_ai.security.AuthUtil;
 import com.abhinay.buildrix_ai.service.ProjectMemberService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +37,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
     private final UserRepository userRepository;
     private final AuthUtil authUtil;
 
+    @PreAuthorize("@security.canViewMembers(#projectId)")
     @Override
     public List<ProjectMemberResponse> getAllProjectMembers(UUID projectId) {
         UUID userId = authUtil.getCurrentUserId();
@@ -46,6 +48,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
                 .toList();
     }
 
+    @PreAuthorize("@security.canManageMembers(#projectId)")
     @Transactional
     @Override
     public ProjectMemberResponse inviteMember(UUID projectId, InviteMemberRequest request) {
@@ -75,6 +78,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
     }
 
     @Transactional
+    @PreAuthorize("@security.canManageMembers(#projectId)")
     @Override
     public ProjectMemberResponse updateMemberRole(UUID projectId, UUID memberId, UpdateProjectMemberRequest request) {
         UUID userId = authUtil.getCurrentUserId();
@@ -90,6 +94,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
     }
 
     @Transactional
+    @PreAuthorize("@security.canManageMembers(#projectId)")
     @Override
     public void removeMember(UUID projectId, UUID memberId) {
         UUID userId = authUtil.getCurrentUserId();
