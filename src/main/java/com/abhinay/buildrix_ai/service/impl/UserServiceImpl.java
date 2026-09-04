@@ -1,6 +1,7 @@
 package com.abhinay.buildrix_ai.service.impl;
 
 import com.abhinay.buildrix_ai.dto.auth.UserProfileResponse;
+import com.abhinay.buildrix_ai.entity.User;
 import com.abhinay.buildrix_ai.exceptions.ResourceNotFoundException;
 import com.abhinay.buildrix_ai.reporsitory.UserRepository;
 import com.abhinay.buildrix_ai.service.UserService;
@@ -11,6 +12,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -22,6 +24,11 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     public UserProfileResponse getUserProfile(UUID id) {
 
         return null;
+    }
+
+    @Override
+    public Optional<User> getUserById(UUID uuid) {
+        return userRepository.findById(uuid);
     }
 
     @Override

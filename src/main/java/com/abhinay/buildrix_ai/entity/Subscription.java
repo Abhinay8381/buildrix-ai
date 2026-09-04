@@ -14,7 +14,7 @@ public class Subscription extends BaseEntity{
 
     private User user;
     private Plan plan;
-    private String stripeSubscriptionId;
+    String stripeSubscriptionId;
     private Instant currentPeriodStart;
     private Instant currentPeriodEnd;
     private Boolean cancelAtPeriodEnd;

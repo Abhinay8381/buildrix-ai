@@ -7,21 +7,27 @@ import com.abhinay.buildrix_ai.dto.billing.subscription.PortalResponse;
 import com.abhinay.buildrix_ai.dto.billing.subscription.SubscriptionResponse;
 import com.abhinay.buildrix_ai.service.PlanService;
 import com.abhinay.buildrix_ai.service.SubscriptionService;
+import com.abhinay.buildrix_ai.webhook.WebhookService;
+import com.stripe.Stripe;
+import com.stripe.exception.SignatureVerificationException;
+import com.stripe.model.Event;
+import com.stripe.net.Webhook;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
 public class BillingController {
 
+
     private final SubscriptionService subscriptionService;
+    private final WebhookService webhookService;
     private final PlanService planService;
     private static final UUID userId = UUID.randomUUID();
 
@@ -44,5 +50,13 @@ public class BillingController {
     @PostMapping("/api/v1/payment/portal")
     public ResponseEntity<PortalResponse> openPaymentPortal(){
         return ResponseEntity.ok(subscriptionService.openCustomerPortal());
+    }
+
+    @PostMapping("webhooks/payment")
+    public ResponseEntity<Void> paymentWebhook(@RequestBody String payload,
+                                               @RequestHeader("Stripe-Signature") String sigHeader){
+        webhookService.processWebhook(payload, sigHeader);
+
+        return ResponseEntity.ok().build();
     }
 }

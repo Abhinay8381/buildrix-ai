@@ -28,6 +28,9 @@ public class User extends BaseEntity implements UserDetails {
     @Column(name = "name", length = 50, nullable = false)
     private String name;
 
+    @Column(unique = true)
+    private String stripeSubscriptionId;
+
     @Column(name = "avatar_url", length = 200)
     private String avatarUrl;
 

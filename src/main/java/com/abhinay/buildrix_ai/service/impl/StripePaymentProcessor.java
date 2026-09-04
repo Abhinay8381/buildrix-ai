@@ -1,14 +1,13 @@
 package com.abhinay.buildrix_ai.service.impl;
 
-import com.abhinay.buildrix_ai.dto.billing.subscription.CheckoutRequest;
-import com.abhinay.buildrix_ai.dto.billing.subscription.CheckoutResponse;
 import com.abhinay.buildrix_ai.dto.billing.subscription.PortalResponse;
 import com.abhinay.buildrix_ai.entity.Plan;
-import com.abhinay.buildrix_ai.exceptions.ResourceNotFoundException;
-import com.abhinay.buildrix_ai.reporsitory.PlanRepository;
-import com.abhinay.buildrix_ai.security.AuthUtil;
+import com.abhinay.buildrix_ai.entity.User;
 import com.abhinay.buildrix_ai.service.PaymentProcessor;
 import com.stripe.exception.StripeException;
+import com.stripe.model.Invoice;
+import com.stripe.model.StripeObject;
+import com.stripe.model.Subscription;
 import com.stripe.model.checkout.Session;
 import com.stripe.param.checkout.SessionCreateParams;
 import lombok.RequiredArgsConstructor;
@@ -16,13 +15,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.util.UUID;
+import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class StripePaymentProcessor implements PaymentProcessor {
-
 
 
     @Value("${client.url}")
@@ -35,10 +33,9 @@ public class StripePaymentProcessor implements PaymentProcessor {
     }
 
     @Override
-    public String checkout(Plan plan, UUID userId) {
+    public String checkout(Plan plan, User user) {
 
-
-        SessionCreateParams sessionCreateParams = SessionCreateParams.builder()
+        var sessionCreateParams = SessionCreateParams.builder()
                 .addLineItem(SessionCreateParams.LineItem.builder()
                         .setPrice(plan.getStripePriceId())
                         .setQuantity(1L)
@@ -51,15 +48,19 @@ public class StripePaymentProcessor implements PaymentProcessor {
                         .build())
                 .setSuccessUrl(frontendUrl + "/payment/success.html?session_id={CHECKOUT_SESSION_ID}")
                 .setCancelUrl(frontendUrl + "/payment/cancel.html")
-                .putMetadata("user_id", userId.toString())
-                .putMetadata("plan_id", plan.getId().toString())
-                .build();
+                .putMetadata("user_id", user.getId().toString())
+                .putMetadata("plan_id", plan.getId().toString());
 
         try{
-            Session session = Session.create(sessionCreateParams);
+            if(user.getStripeSubscriptionId() != null && !user.getStripeSubscriptionId().isBlank()){
+                sessionCreateParams.setCustomer(user.getStripeSubscriptionId());
+            }else
+                sessionCreateParams.setCustomerEmail(user.getEmail());
+            Session session = Session.create(sessionCreateParams.build());
             return session.getUrl();
         } catch (StripeException e) {
             throw new RuntimeException(e);
         }
     }
+
 }

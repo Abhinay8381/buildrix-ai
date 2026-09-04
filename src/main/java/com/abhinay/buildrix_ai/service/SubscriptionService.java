@@ -4,7 +4,9 @@ import com.abhinay.buildrix_ai.dto.billing.subscription.CheckoutRequest;
 import com.abhinay.buildrix_ai.dto.billing.subscription.CheckoutResponse;
 import com.abhinay.buildrix_ai.dto.billing.subscription.PortalResponse;
 import com.abhinay.buildrix_ai.dto.billing.subscription.SubscriptionResponse;
+import com.abhinay.buildrix_ai.enums.SubscriptionStatus;
 
+import java.time.Instant;
 import java.util.UUID;
 
 public interface SubscriptionService {
@@ -13,4 +15,15 @@ public interface SubscriptionService {
     CheckoutResponse createCheckout(CheckoutRequest request);
 
     SubscriptionResponse getUserSubscription(UUID usedId);
+
+
+    void activateSubscription(UUID userId, UUID planId, String subscriptionId, String customerId);
+
+    void updateSubscription(String id, SubscriptionStatus status, Instant periodStart, Instant periodEnd, Boolean cancelAtPeriodEnd, UUID planId);
+
+    void cancelSubscription(String id);
+
+    void renewSubscription(String subId, Instant periodStart, Instant periodEnd);
+
+    void markSubscriptionDue(String subId);
 }

@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class PaymentConfig {
 
-    @Value("${stripe.test-key}")
+    @Value("${stripe.api.secret}")
     private String stripeSecretKey;
 
     @PostConstruct

@@ -20,7 +20,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class WebSecurityConfig {
 
     private static final String[] PUBLIC_ROUTES = {
-            "/api/v1/auth/**",  "/error",
+            "/api/v1/auth/**",  "/error", "/webhooks/**",
     };
 
     private final JwtAuthFilter jwtAuthFilter;
