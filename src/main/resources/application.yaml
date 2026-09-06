@@ -23,7 +23,11 @@ spring:
 jwt:
   secret-key: dont-use-in-production4135265253735gdrdgr
 
-
+stripe:
+  api:
+    secret: replace-with-your-stripe-api-key
+  webhook:
+    secret: replace-with-your-stripe-webhook-secret-key
 
 client:
   url: http://localhost:8080

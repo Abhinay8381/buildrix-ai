@@ -49,6 +49,7 @@ public class CheckoutSessionCompletedHandler implements StripeEventHandler {
                 .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
         if(user.getStripeSubscriptionId() == null){
             user.setStripeSubscriptionId(subscriptionId);
+            user.setStripeCustomerId(customerId);
             userRepository.save(user);
         }
         subscriptionService.activateSubscription(userId, planId, subscriptionId, customerId);

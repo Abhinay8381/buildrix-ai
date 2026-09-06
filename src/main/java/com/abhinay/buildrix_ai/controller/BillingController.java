@@ -8,17 +8,11 @@ import com.abhinay.buildrix_ai.dto.billing.subscription.SubscriptionResponse;
 import com.abhinay.buildrix_ai.service.PlanService;
 import com.abhinay.buildrix_ai.service.SubscriptionService;
 import com.abhinay.buildrix_ai.webhook.WebhookService;
-import com.stripe.Stripe;
-import com.stripe.exception.SignatureVerificationException;
-import com.stripe.model.Event;
-import com.stripe.net.Webhook;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -38,7 +32,7 @@ public class BillingController {
 
     @GetMapping("/api/v1/me/subscription")
     public ResponseEntity<SubscriptionResponse> getMySubscription(){
-        return ResponseEntity.ok(subscriptionService.getUserSubscription(userId));
+        return ResponseEntity.ok(subscriptionService.getUserSubscription());
     }
 
     @PostMapping("/api/v1/payment/checkout")
@@ -48,7 +42,7 @@ public class BillingController {
     }
 
     @PostMapping("/api/v1/payment/portal")
-    public ResponseEntity<PortalResponse> openPaymentPortal(){
+    public ResponseEntity<PortalResponse> openCustomerPortal(){
         return ResponseEntity.ok(subscriptionService.openCustomerPortal());
     }
 

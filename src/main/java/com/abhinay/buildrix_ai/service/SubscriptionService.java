@@ -14,7 +14,7 @@ public interface SubscriptionService {
 
     CheckoutResponse createCheckout(CheckoutRequest request);
 
-    SubscriptionResponse getUserSubscription(UUID usedId);
+    SubscriptionResponse getUserSubscription();
 
 
     void activateSubscription(UUID userId, UUID planId, String subscriptionId, String customerId);
@@ -23,7 +23,9 @@ public interface SubscriptionService {
 
     void cancelSubscription(String id);
 
-    void renewSubscription(String subId, Instant periodStart, Instant periodEnd);
+    void renewSubscription(String subId, Instant periodStart, Instant periodEnd, String customerEmail, String stripePriceId);
 
     void markSubscriptionDue(String subId);
+
+    boolean canCreateProject();
 }

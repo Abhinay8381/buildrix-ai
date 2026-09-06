@@ -71,7 +71,7 @@ public class CustomerSubscriptionUpdatedHandler implements StripeEventHandler {
             case "active" -> SubscriptionStatus.ACTIVE;
             case "trailing" -> SubscriptionStatus.TRAILING;
             case "past_due", "unpaid", "paused", "incomplete_expired" -> SubscriptionStatus.PAST_DUE;
-            case "canceled" -> SubscriptionStatus.CANCELLED;
+            case "canceled" -> SubscriptionStatus.CANCELED;
             case "incomplete" -> SubscriptionStatus.INCOMPLETE;
             default -> {
                 log.warn("Unmapped Stripe status: {}", status);

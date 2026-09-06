@@ -1,13 +1,9 @@
 package com.abhinay.buildrix_ai.service.impl;
 
-import com.abhinay.buildrix_ai.dto.billing.subscription.PortalResponse;
 import com.abhinay.buildrix_ai.entity.Plan;
 import com.abhinay.buildrix_ai.entity.User;
 import com.abhinay.buildrix_ai.service.PaymentProcessor;
 import com.stripe.exception.StripeException;
-import com.stripe.model.Invoice;
-import com.stripe.model.StripeObject;
-import com.stripe.model.Subscription;
 import com.stripe.model.checkout.Session;
 import com.stripe.param.checkout.SessionCreateParams;
 import lombok.RequiredArgsConstructor;
@@ -27,9 +23,18 @@ public class StripePaymentProcessor implements PaymentProcessor {
     private String frontendUrl;
 
     @Override
-    public PortalResponse openCustomerPortal() {
-
-        return null;
+    public String openCustomerPortal(String stripeCustomerId) {
+        try {
+            com.stripe.model.billingportal.Session session = com.stripe.model.billingportal.Session.create(
+                    com.stripe.param.billingportal.SessionCreateParams.builder()
+                            .setCustomer(stripeCustomerId)
+                            .setReturnUrl(frontendUrl)
+                            .build()
+            );
+            return session.getUrl();
+        } catch (StripeException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -52,8 +57,8 @@ public class StripePaymentProcessor implements PaymentProcessor {
                 .putMetadata("plan_id", plan.getId().toString());
 
         try{
-            if(user.getStripeSubscriptionId() != null && !user.getStripeSubscriptionId().isBlank()){
-                sessionCreateParams.setCustomer(user.getStripeSubscriptionId());
+            if(user.getStripeCustomerId() != null && !user.getStripeCustomerId().isBlank()){
+                sessionCreateParams.setCustomer(user.getStripeCustomerId());
             }else
                 sessionCreateParams.setCustomerEmail(user.getEmail());
             Session session = Session.create(sessionCreateParams.build());
@@ -62,5 +67,7 @@ public class StripePaymentProcessor implements PaymentProcessor {
             throw new RuntimeException(e);
         }
     }
+
+
 
 }

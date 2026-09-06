@@ -42,10 +42,16 @@ public class InvoicePaidHandler implements StripeEventHandler {
             Instant periodStart = toInstant(item.getCurrentPeriodStart());
             Instant periodEnd = toInstant(item.getCurrentPeriodEnd());
 
+
+            String customerEmail = Customer.retrieve(subscription.getCustomer()).getEmail();
+            String stripePriceId = subscription.getItems().getData().getFirst().getPrice().getId();
+
             subscriptionService.renewSubscription(
                     subId,
                     periodStart,
-                    periodEnd
+                    periodEnd,
+                    stripePriceId,
+                    customerEmail
             );
         } catch (StripeException e) {
             throw new RuntimeException(e);

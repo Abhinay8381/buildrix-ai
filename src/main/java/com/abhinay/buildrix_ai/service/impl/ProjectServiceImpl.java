@@ -8,6 +8,7 @@ import com.abhinay.buildrix_ai.entity.ProjectMember;
 import com.abhinay.buildrix_ai.entity.ProjectMemberId;
 import com.abhinay.buildrix_ai.entity.User;
 import com.abhinay.buildrix_ai.enums.ProjectRole;
+import com.abhinay.buildrix_ai.exceptions.BadRequestException;
 import com.abhinay.buildrix_ai.exceptions.ResourceNotFoundException;
 import com.abhinay.buildrix_ai.mapper.ProjectMapper;
 import com.abhinay.buildrix_ai.reporsitory.ProjectMemberRepository;
@@ -15,6 +16,7 @@ import com.abhinay.buildrix_ai.reporsitory.ProjectRepository;
 import com.abhinay.buildrix_ai.reporsitory.UserRepository;
 import com.abhinay.buildrix_ai.security.AuthUtil;
 import com.abhinay.buildrix_ai.service.ProjectService;
+import com.abhinay.buildrix_ai.service.SubscriptionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -37,6 +39,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final ProjectMapper projectMapper;
     private final ProjectMemberRepository projectMemberRepository;
     private final AuthUtil authUtil;
+    private final SubscriptionService subscriptionService;
 
     @Override
     public List<ProjectSummaryResponse> getAllUserProjects() {
@@ -59,6 +62,9 @@ public class ProjectServiceImpl implements ProjectService {
     @Transactional
     @Override
     public ProjectResponse createProject(ProjectRequest projectRequest) {
+        if(!subscriptionService.canCreateProject()){
+            throw new BadRequestException("Cannot create project. Project limit Exceeded. Please upgrade you plan to create more projects.");
+        }
         UUID userId = authUtil.getCurrentUserId();
         Project project = Project.builder()
                 .name(projectRequest.name())
