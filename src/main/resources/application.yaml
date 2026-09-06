@@ -20,14 +20,22 @@ spring:
     virtual:
       enabled: true
 
+  ai:
+    openai:
+      api-key:
+      base-url: https://openrouter.ai/api
+      chat:
+        temperature: 0.0
+        model: minimax/minimax-m3:free
+
 jwt:
   secret-key: dont-use-in-production4135265253735gdrdgr
 
 stripe:
   api:
-    secret: replace-with-your-stripe-api-key
+    secret: 
   webhook:
-    secret: replace-with-your-stripe-webhook-secret-key
+    secret: 
 
 client:
   url: http://localhost:8080
