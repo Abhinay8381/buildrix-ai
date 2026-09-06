@@ -133,7 +133,3 @@ The underlying relational schema handles Users, Projects, Members, Subscriptions
 - [ ] **Spring AI Integration**: Context retrieval (RAG) and tool calling.
 - [ ] **Kubernetes Execution Engine**: Namespace allocation & live pod deployment for previews.
 
----
-
-## 📄 License
-Distributed under the MIT License.
