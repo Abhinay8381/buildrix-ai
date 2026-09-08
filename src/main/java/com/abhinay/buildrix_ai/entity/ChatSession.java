@@ -12,6 +12,8 @@ import java.time.Instant;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Table(name = "chat_sessions")
+@Entity
 public class ChatSession{
 
     @EmbeddedId

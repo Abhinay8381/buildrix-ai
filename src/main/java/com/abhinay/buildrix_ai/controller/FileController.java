@@ -2,7 +2,7 @@ package com.abhinay.buildrix_ai.controller;
 
 import com.abhinay.buildrix_ai.dto.project.file.FileContentResponse;
 import com.abhinay.buildrix_ai.dto.project.file.FileNode;
-import com.abhinay.buildrix_ai.service.FileService;
+import com.abhinay.buildrix_ai.service.ProjectFileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,17 +18,17 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class FileController {
 
-    private final FileService fileService;
+    private final ProjectFileService projectFileService;
     private static final UUID userId = UUID.randomUUID();
 
     @GetMapping
     public ResponseEntity<List<FileNode>> getProjectFiles(@PathVariable UUID projectId){
-        return ResponseEntity.ok(fileService.getProjectFileTree(userId, projectId));
+        return ResponseEntity.ok(projectFileService.getProjectFileTree(projectId));
     }
 
     @GetMapping("/{*path}")
     public ResponseEntity<FileContentResponse> downloadFile(@PathVariable UUID projectId,
                                                             @PathVariable("*path") String filePath){
-        return ResponseEntity.ok(fileService.getFileContent(userId, projectId, filePath ));
+        return ResponseEntity.ok(projectFileService.getFileContent(userId, projectId, filePath ));
     }
 }

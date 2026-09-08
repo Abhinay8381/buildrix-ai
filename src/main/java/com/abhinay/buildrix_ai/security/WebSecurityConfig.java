@@ -1,5 +1,6 @@
 package com.abhinay.buildrix_ai.security;
 
+import jakarta.servlet.DispatcherType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
@@ -30,7 +31,9 @@ public class WebSecurityConfig {
         return httpSecurity
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(http ->
-                        http.requestMatchers(PUBLIC_ROUTES).permitAll()
+                        http
+                                .dispatcherTypeMatchers(DispatcherType.ASYNC).permitAll()
+                                .requestMatchers(PUBLIC_ROUTES).permitAll()
                                 .anyRequest().authenticated()
                         )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)

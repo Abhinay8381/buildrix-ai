@@ -16,6 +16,7 @@ import com.abhinay.buildrix_ai.reporsitory.ProjectRepository;
 import com.abhinay.buildrix_ai.reporsitory.UserRepository;
 import com.abhinay.buildrix_ai.security.AuthUtil;
 import com.abhinay.buildrix_ai.service.ProjectService;
+import com.abhinay.buildrix_ai.service.ProjectTemplateService;
 import com.abhinay.buildrix_ai.service.SubscriptionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +41,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final ProjectMemberRepository projectMemberRepository;
     private final AuthUtil authUtil;
     private final SubscriptionService subscriptionService;
+    private final ProjectTemplateService projectTemplateService;
 
     @Override
     public List<ProjectSummaryResponse> getAllUserProjects() {
@@ -82,6 +84,8 @@ public class ProjectServiceImpl implements ProjectService {
                 .acceptedAt(Instant.now())
                 .build();
         projectMemberRepository.save(projectMember);
+
+        projectTemplateService.initializeProjectFromTemplate(project.getId());
         return projectMapper.toProjectResponse(project);
     }
 

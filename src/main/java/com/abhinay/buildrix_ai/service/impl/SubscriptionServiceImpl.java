@@ -52,7 +52,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private final SubscriptionMapper subscriptionMapper;
     private final ProjectMemberRepository projectMemberRepository;
 
-    private static final int FREE_TIER_PROJECT_LIMIT = 1;
+    private static final int FREE_TIER_PROJECT_LIMIT = 100;
 
     @Override
     public PortalResponse openCustomerPortal() {

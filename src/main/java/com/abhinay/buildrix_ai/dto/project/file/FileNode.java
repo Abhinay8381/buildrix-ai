@@ -1,11 +1,13 @@
 package com.abhinay.buildrix_ai.dto.project.file;
 
-import java.time.Instant;
+import org.jspecify.annotations.NonNull;
 
 public record FileNode(
-        String path,
-        String type,
-        Long fileSize,
-        Instant updatedAt
+        String path
 ) {
+
+    @Override
+    public @NonNull String toString(){
+        return path;
+    }
 }

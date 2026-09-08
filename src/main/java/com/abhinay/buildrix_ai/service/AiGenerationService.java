@@ -6,5 +6,5 @@ import reactor.core.publisher.Flux;
 import java.util.UUID;
 
 public interface AiGenerationService {
-    Flux<String> streamResponse(String message, UUID uuid);
+    Flux<String> streamResponse(String message, UUID projectId);
 }

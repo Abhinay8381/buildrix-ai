@@ -3,9 +3,9 @@ spring:
     name: buildrix-ai
 
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5431/buildrix-DB}
-    username: ${DB_USER:abhinay}
-    password: ${DB_PASS:Abhinay123}
+    url: ${DB_URL:jdbc:postgresql://localhost:9010/buildrix-DB}
+    username: ${DB_USER:user}
+    password: ${DB_PASS:password}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -22,11 +22,11 @@ spring:
 
   ai:
     openai:
-      api-key:
-      base-url: https://openrouter.ai/api
+      api-key: 
+      base-url: https://openrouter.ai/api/v1
       chat:
         temperature: 0.0
-        model: minimax/minimax-m3:free
+        model: nvidia/nemotron-3-ultra-550b-a55b:free
 
 jwt:
   secret-key: dont-use-in-production4135265253735gdrdgr
@@ -39,3 +39,18 @@ stripe:
 
 client:
   url: http://localhost:8080
+
+logging:
+  level:
+    org.springframework.ai:
+      chat.client: DEBUG
+
+minio:
+  url: http://localhost:9000          # or minio:9000 if inside docker network
+  access-key: minioadmin
+  secret-key: minioadmin123
+  project-bucket: projects
+  starter-project-bucket: starter-projects
+  react-vite-tailwind-daisyui-starter: react-vite-tailwind-daisyui-starter
+
+
