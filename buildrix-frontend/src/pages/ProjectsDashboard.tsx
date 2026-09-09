@@ -140,21 +140,19 @@ export function ProjectsDashboard() {
     );
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-background font-mono text-foreground">
             {/* Header */}
-            <header className="border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                <div className="container flex h-14 max-w-screen-2xl items-center justify-between px-4 sm:px-8">
-                    <div className="flex items-center gap-2 font-bold text-lg">
-                        <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                            <Folder className="w-5 h-5 text-primary" />
-                        </div>
-                        Project Companion
+            <header className="border-b-2 border-primary/40 bg-card/95 backdrop-blur shadow-[0_0_15px_rgba(255,170,0,0.1)]">
+                <div className="container flex h-16 max-w-screen-2xl items-center justify-between px-4 sm:px-8">
+                    <div className="flex items-center gap-3 font-mono font-bold text-lg tracking-wider text-primary uppercase">
+                        <img src="/assets/buildrix-ai.svg" alt="Buildrix AI" className="w-8 h-8 object-contain" />
+                        <span>BUILDRIX AI // DASHBOARD</span>
                     </div>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full">
-                                <Avatar className="h-9 w-9">
-                                    <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-sm border border-primary/40 bg-background/50 hover:bg-primary/20 hover:border-primary">
+                                <Avatar className="h-9 w-9 rounded-sm">
+                                    <AvatarFallback className="bg-primary/20 text-primary font-bold font-mono">
                                         {(() => {
                                             const userInfo = getUserInfo();
                                             if (userInfo?.name) {
@@ -166,18 +164,18 @@ export function ProjectsDashboard() {
                                 </Avatar>
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-56">
-                            <div className="flex flex-col space-y-1 p-2">
-                                <p className="text-sm font-medium leading-none">
+                        <DropdownMenuContent align="end" className="w-56 bg-card border-2 border-primary/40 font-mono shadow-[0_0_20px_rgba(255,170,0,0.2)]">
+                            <div className="flex flex-col space-y-1 p-2 border-b border-primary/20">
+                                <p className="text-xs font-bold leading-none text-primary">
                                     {getUserInfo()?.name || "User"}
                                 </p>
-                                <p className="text-xs leading-none text-muted-foreground">
-                                    {getUserInfo()?.username || ""}
+                                <p className="text-[10px] leading-none text-muted-foreground">
+                                    {getUserInfo()?.email || getUserInfo()?.username || ""}
                                 </p>
                             </div>
-                            <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600 cursor-pointer">
+                            <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive cursor-pointer font-mono text-xs">
                                 <LogOut className="w-4 h-4 mr-2" />
-                                Sign Out
+                                [ DISCONNECT ]
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -187,17 +185,17 @@ export function ProjectsDashboard() {
             <main className="container max-w-screen-2xl py-8 px-4 sm:px-8">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Projects</h1>
-                        <p className="text-muted-foreground mt-1">
-                            Manage and create your AI-powered projects
+                        <h1 className="text-3xl font-bold tracking-widest text-primary uppercase font-mono">PROJECT REPOSITORY</h1>
+                        <p className="text-muted-foreground text-xs font-mono mt-1">
+                            System initialized. Manage your Buildrix AI applications.
                         </p>
                     </div>
 
                     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                         <DialogTrigger asChild>
-                            <Button className="gap-2">
+                            <Button className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-mono font-bold tracking-wider uppercase rounded-sm shadow-[0_0_15px_rgba(255,170,0,0.3)]">
                                 <Plus className="w-4 h-4" />
-                                New Project
+                                + NEW PROJECT
                             </Button>
                         </DialogTrigger>
                         <DialogContent>
@@ -252,10 +250,10 @@ export function ProjectsDashboard() {
 
                 {/* Search */}
                 <div className="relative mb-8 max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
                     <Input
-                        placeholder="Search projects..."
-                        className="pl-9"
+                        placeholder="Search project repository..."
+                        className="pl-10 h-11 bg-card border-primary/30 focus:border-primary rounded-sm font-mono text-xs text-foreground"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -267,13 +265,15 @@ export function ProjectsDashboard() {
                         <Loader2 className="w-8 h-8 animate-spin text-primary" />
                     </div>
                 ) : filteredProjects.length === 0 ? (
-                    <div className="text-center py-20 border border-dashed rounded-lg">
-                        <h3 className="text-lg font-semibold mb-2">No projects found</h3>
-                        <p className="text-muted-foreground mb-6">
-                            {searchQuery ? "Try a different search query" : "Create your first project to get started"}
+                    <div className="text-center py-20 border-2 border-dashed border-primary/30 rounded-sm bg-card/40">
+                        <h3 className="text-lg font-bold text-primary uppercase tracking-wider mb-2 font-mono">No projects found</h3>
+                        <p className="text-muted-foreground text-xs font-mono mb-6">
+                            {searchQuery ? "No repository entry matches search query" : "Initialize your first Buildrix AI project"}
                         </p>
                         {!searchQuery && (
-                            <Button onClick={() => setIsDialogOpen(true)}>Create Project</Button>
+                            <Button onClick={() => setIsDialogOpen(true)} className="bg-primary text-primary-foreground font-mono font-bold uppercase rounded-sm">
+                                Create Project
+                            </Button>
                         )}
                     </div>
                 ) : (
@@ -281,11 +281,11 @@ export function ProjectsDashboard() {
                         {filteredProjects.map((project) => (
                             <Card
                                 key={project.id}
-                                className="group cursor-pointer hover:shadow-lg transition-all hover:border-primary/50"
+                                className="group cursor-pointer bg-card border-2 border-primary/30 hover:border-primary transition-all shadow-[0_0_15px_rgba(0,0,0,0.5)] hover:shadow-[0_0_20px_rgba(255,170,0,0.2)] rounded-sm overflow-hidden font-mono"
                                 onClick={() => navigate(`/projects/${project.id}`)}
                             >
                                 <CardHeader className="p-0">
-                                    <div className="aspect-video bg-muted/50 w-full relative overflow-hidden rounded-t-lg">
+                                    <div className="aspect-video bg-muted/30 w-full relative overflow-hidden border-b border-primary/20">
                                         {project.thumbnailUrl ? (
                                             <img
                                                 src={project.thumbnailUrl}
@@ -293,34 +293,49 @@ export function ProjectsDashboard() {
                                                 className="w-full h-full object-cover transition-transform group-hover:scale-105"
                                             />
                                         ) : (
-                                            <div
-                                                className="w-full h-full"
-                                                style={generateGradient(project.name)}
-                                            />
+                                            <div className="w-full h-full bg-[#eee3cf] flex flex-col items-center justify-center p-4 relative overflow-hidden border-b-2 border-[#241d17]">
+                                                {/* Retro background grid */}
+                                                <div 
+                                                    className="absolute inset-0 opacity-30 pointer-events-none"
+                                                    style={{
+                                                        backgroundImage: "linear-gradient(#cbbda5 1px, transparent 1px), linear-gradient(90deg, #cbbda5 1px, transparent 1px)",
+                                                        backgroundSize: "20px 20px"
+                                                    }}
+                                                />
+                                                {/* App Logo & Letter Badge */}
+                                                <div className="relative z-10 flex flex-col items-center gap-2">
+                                                    <div className="w-12 h-12 bg-[#e85d32] border-2 border-[#241d17] shadow-[3px_3px_0_#241d17] flex items-center justify-center">
+                                                        <img src="/assets/buildrix-ai.svg" alt="Buildrix AI Logo" className="w-8 h-8 object-contain" />
+                                                    </div>
+                                                    <span className="text-[10px] font-mono font-bold tracking-widest text-[#766b5e] uppercase">
+                                                        // WORKSPACE
+                                                    </span>
+                                                </div>
+                                            </div>
                                         )}
                                     </div>
                                 </CardHeader>
                                 <CardContent className="p-4 flex flex-col gap-2">
                                     <div className="flex justify-between items-start gap-2">
-                                        <CardTitle className="text-lg group-hover:text-primary transition-colors line-clamp-1">
+                                        <CardTitle className="text-base font-bold tracking-wide text-foreground group-hover:text-primary transition-colors line-clamp-1 uppercase">
                                             {project.name}
                                         </CardTitle>
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 -mt-1 -mr-2 text-muted-foreground hover:text-foreground">
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 -mt-1 -mr-2 text-muted-foreground hover:text-primary">
                                                     <MoreVertical className="w-4 h-4" />
                                                 </Button>
                                             </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={(e) => handleRenameClick(e, project)}>
-                                                    <Edit className="w-4 h-4 mr-2" />
+                                            <DropdownMenuContent align="end" className="bg-card border-2 border-primary/40 font-mono text-xs shadow-[0_0_15px_rgba(255,170,0,0.2)]">
+                                                <DropdownMenuItem onClick={(e) => handleRenameClick(e, project)} className="cursor-pointer">
+                                                    <Edit className="w-4 h-4 mr-2 text-primary" />
                                                     Rename
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={(e) => handleDownloadProject(e, project.id)}>
-                                                    <Download className="w-4 h-4 mr-2" />
+                                                <DropdownMenuItem onClick={(e) => handleDownloadProject(e, project.id)} className="cursor-pointer">
+                                                    <Download className="w-4 h-4 mr-2 text-secondary" />
                                                     Download
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem className="text-red-500 focus:text-red-500" onClick={(e) => handleDeleteProject(e, project.id)}>
+                                                <DropdownMenuItem className="text-destructive focus:text-destructive cursor-pointer" onClick={(e) => handleDeleteProject(e, project.id)}>
                                                     <Trash className="w-4 h-4 mr-2" />
                                                     Delete
                                                 </DropdownMenuItem>
@@ -330,9 +345,9 @@ export function ProjectsDashboard() {
                                     {project.role && (
                                         <div className="flex">
                                             <span className={cn(
-                                                "text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border",
-                                                project.role === 'OWNER' ? "bg-primary/10 text-primary border-primary/20" :
-                                                    project.role === 'EDITOR' ? "bg-amber-500/10 text-amber-600 border-amber-500/20" :
+                                                "text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-sm border",
+                                                project.role === 'OWNER' ? "bg-primary/20 text-primary border-primary/40" :
+                                                    project.role === 'EDITOR' ? "bg-secondary/20 text-secondary border-secondary/40" :
                                                         "bg-muted text-muted-foreground border-border"
                                             )}>
                                                 {project.role}
@@ -340,8 +355,8 @@ export function ProjectsDashboard() {
                                         </div>
                                     )}
                                 </CardContent>
-                                <CardFooter className="p-4 pt-0 text-xs text-muted-foreground">
-                                    Updated {new Date(project.createdAt).toLocaleDateString()}
+                                <CardFooter className="p-4 pt-0 text-[11px] font-mono text-muted-foreground">
+                                    UPDATED: {new Date(project.createdAt).toLocaleDateString()}
                                 </CardFooter>
                             </Card>
                         ))}

@@ -3,12 +3,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Globe, Link as LinkIcon, Lock, Check } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { api } from "@/lib/api";
 import { ProjectMember, ProjectRole } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
 
 interface ShareDialogProps {
     projectId: string;
@@ -36,7 +34,7 @@ export function ShareDialog({ projectId, trigger, open, onOpenChange }: ShareDia
     };
 
     useEffect(() => {
-        if (isOpen) {
+        if (isOpen && projectId) {
             loadMembers();
         }
     }, [isOpen, projectId]);
@@ -46,7 +44,6 @@ export function ShareDialog({ projectId, trigger, open, onOpenChange }: ShareDia
             const data = await api.getProjectMembers(projectId);
             setMembers(data);
         } catch (error) {
-            // Fail silently or show placeholder if valid "mock" experience is needed
             console.error("Failed to load members", error);
         }
     };
@@ -55,19 +52,23 @@ export function ShareDialog({ projectId, trigger, open, onOpenChange }: ShareDia
         if (!inviteEmail.trim()) return;
         setLoading(true);
         try {
-            await api.inviteMember(projectId, inviteEmail, inviteRole);
+            await api.inviteMember(projectId, inviteEmail.trim(), inviteRole);
             toast({ title: "Invite sent", description: `Invited ${inviteEmail} to the project.` });
             setInviteEmail("");
             loadMembers();
-        } catch (error) {
-            console.error(error);
-            toast({ title: "Failed to invite", description: "Could not send invitation.", variant: "destructive" });
+        } catch (error: any) {
+            console.error("Invite error:", error);
+            toast({
+                title: "Failed to invite",
+                description: error.message || "Could not send invitation.",
+                variant: "destructive"
+            });
         } finally {
             setLoading(false);
         }
     };
 
-    const handleRoleChange = async (userId: number, newRole: ProjectRole) => {
+    const handleRoleChange = async (userId: string, newRole: ProjectRole) => {
         try {
             await api.updateMemberRole(projectId, userId, newRole);
             setMembers(members.map(m => m.userId === userId ? { ...m, role: newRole } : m));
@@ -77,7 +78,7 @@ export function ShareDialog({ projectId, trigger, open, onOpenChange }: ShareDia
         }
     };
 
-    const handleRemoveMember = async (userId: number) => {
+    const handleRemoveMember = async (userId: string) => {
         try {
             await api.removeMember(projectId, userId);
             setMembers(members.filter(m => m.userId !== userId));
@@ -90,18 +91,18 @@ export function ShareDialog({ projectId, trigger, open, onOpenChange }: ShareDia
     return (
         <Dialog open={isOpen} onOpenChange={handleOpenChange}>
             {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-            <DialogContent className="sm:max-w-md gap-0 p-0 overflow-hidden border-none shadow-2xl">
+            <DialogContent className="sm:max-w-md gap-0 p-0 overflow-hidden border-2 border-foreground bg-card text-card-foreground shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                 <div className="p-6 pb-4">
                     <DialogHeader className="mb-4">
-                        <DialogTitle className="text-xl">Share project</DialogTitle>
+                        <DialogTitle className="text-xl font-bold">Share project</DialogTitle>
                     </DialogHeader>
 
                     {/* Invite Section */}
                     <div className="space-y-3 mb-6">
                         <div className="flex gap-2">
                             <Input
-                                placeholder="Email or username"
-                                className="flex-1 bg-muted/50 border-input/50"
+                                placeholder="Enter user email"
+                                className="flex-1 border-2 border-foreground bg-background font-medium"
                                 value={inviteEmail}
                                 onChange={(e) => setInviteEmail(e.target.value)}
                                 onKeyDown={(e) => e.key === "Enter" && handleInvite()}
@@ -109,16 +110,16 @@ export function ShareDialog({ projectId, trigger, open, onOpenChange }: ShareDia
                             <Button
                                 onClick={handleInvite}
                                 disabled={!inviteEmail.trim() || loading}
-                                className="px-6"
+                                className="px-6 font-bold uppercase tracking-wider border-2 border-foreground shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
                             >
-                                Invite
+                                {loading ? "Inviting..." : "Invite"}
                             </Button>
                         </div>
                         <Select value={inviteRole} onValueChange={(val) => setInviteRole(val as ProjectRole)}>
-                            <SelectTrigger className="w-full bg-muted/50 border-input/50">
+                            <SelectTrigger className="w-full border-2 border-foreground bg-background font-medium">
                                 <SelectValue />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="border-2 border-foreground shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                                 <SelectItem value="VIEWER">Can view</SelectItem>
                                 <SelectItem value="EDITOR">Can edit</SelectItem>
                                 <SelectItem value="OWNER">Owner</SelectItem>
@@ -128,36 +129,29 @@ export function ShareDialog({ projectId, trigger, open, onOpenChange }: ShareDia
 
                     {/* Members List */}
                     <div className="space-y-4">
-                        <h4 className="text-sm font-medium text-muted-foreground">People with access</h4>
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">People with access</h4>
 
                         <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
                             {members.length === 0 && (
-                                <div className="flex items-center gap-3 p-2 rounded-lg bg-muted/30">
-                                    <Avatar className="h-9 w-9">
-                                        <AvatarFallback>ME</AvatarFallback>
-                                    </Avatar>
-                                    <div className="flex-1 text-sm">
-                                        <div className="font-medium">You</div>
-                                        <div className="text-xs text-muted-foreground">Owner</div>
-                                    </div>
-                                    <span className="text-xs text-muted-foreground px-2">Owner</span>
+                                <div className="text-center py-4 text-sm text-muted-foreground font-medium">
+                                    No project members found.
                                 </div>
                             )}
 
                             {members.map(member => (
-                                <div key={member.userId} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
-                                    <Avatar className="h-9 w-9">
-                                        <AvatarFallback className="text-xs font-medium">
-                                            {member.name ? member.name.charAt(0).toUpperCase() : member.username.slice(0, 2).toUpperCase()}
+                                <div key={member.userId} className="flex items-center gap-3 p-2 rounded-md border border-foreground/20 bg-muted/30">
+                                    <Avatar className="h-9 w-9 border border-foreground">
+                                        <AvatarFallback className="text-xs font-bold bg-primary text-primary-foreground">
+                                            {member.name ? member.name.charAt(0).toUpperCase() : (member.email ? member.email.slice(0, 2).toUpperCase() : "U")}
                                         </AvatarFallback>
                                     </Avatar>
                                     <div className="flex-1 min-w-0 text-sm">
-                                        <div className="font-medium truncate">{member.name || member.username}</div>
-                                        <div className="text-xs text-muted-foreground truncate">{member.username}</div>
+                                        <div className="font-bold truncate">{member.name || member.email}</div>
+                                        <div className="text-xs text-muted-foreground truncate">{member.email}</div>
                                     </div>
 
                                     {member.role === 'OWNER' ? (
-                                        <span className="text-xs text-muted-foreground px-2 whitespace-nowrap">Owner</span>
+                                        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground px-2 whitespace-nowrap">Owner</span>
                                     ) : (
                                         <Select
                                             defaultValue={member.role}
@@ -166,13 +160,13 @@ export function ShareDialog({ projectId, trigger, open, onOpenChange }: ShareDia
                                                 else handleRoleChange(member.userId, val as ProjectRole);
                                             }}
                                         >
-                                            <SelectTrigger className="h-8 w-[100px] text-xs border-none bg-transparent hover:bg-muted focus:ring-1 shadow-none">
+                                            <SelectTrigger className="h-8 w-[100px] text-xs font-bold border border-foreground bg-background">
                                                 <SelectValue />
                                             </SelectTrigger>
-                                            <SelectContent align="end">
+                                            <SelectContent align="end" className="border-2 border-foreground shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                                                 <SelectItem value="EDITOR">Can edit</SelectItem>
                                                 <SelectItem value="VIEWER">Can view</SelectItem>
-                                                <SelectItem value="REMOVE" className="text-destructive focus:text-destructive">Remove</SelectItem>
+                                                <SelectItem value="REMOVE" className="text-destructive focus:text-destructive font-bold">Remove</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     )}

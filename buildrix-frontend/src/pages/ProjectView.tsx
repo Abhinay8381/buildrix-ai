@@ -287,21 +287,20 @@ Please analyze this error and fix the code to resolve it.`;
     <div className="h-screen flex flex-col overflow-hidden bg-background">
       {/* Header */}
       <header className="h-12 shrink-0 border-b border-border/50 bg-panel flex items-center justify-between px-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 font-mono">
           {project ? (
             <>
-              <div
-                className="w-7 h-7 rounded-sm shadow-sm"
-                style={generateGradient(project.name)}
-              />
-              <span className="font-semibold text-sm">{project.name}</span>
+              <div className="w-7 h-7 bg-[#e85d32] border border-[#241d17] flex items-center justify-center shadow-[2px_2px_0_#241d17]">
+                <img src="/assets/buildrix-ai.svg" alt="Buildrix AI Logo" className="w-5 h-5 object-contain" />
+              </div>
+              <span className="font-bold text-sm text-foreground uppercase tracking-wide">{project.name}</span>
             </>
           ) : (
             <>
-              <div className="w-7 h-7 rounded-lg bg-primary/20 flex items-center justify-center">
-                <Sparkles className="w-3.5 h-3.5 text-primary" />
+              <div className="w-7 h-7 bg-[#e85d32] border border-[#241d17] flex items-center justify-center">
+                <img src="/assets/buildrix-ai.svg" alt="Buildrix AI Logo" className="w-5 h-5 object-contain" />
               </div>
-              <span className="font-semibold text-sm">Loading...</span>
+              <span className="font-bold text-sm text-foreground uppercase">Loading...</span>
             </>
           )}
           <span className="text-muted-foreground text-xs ml-2">Previewing last saved version</span>

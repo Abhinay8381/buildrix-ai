@@ -32,8 +32,8 @@ public class ProjectMemberController {
     }
 
     @PatchMapping("/{memberId}")
-    public ResponseEntity<ProjectMemberResponse> updateMemberRole(@PathVariable UUID memberId,
-                                                                  @PathVariable UUID projectId,
+    public ResponseEntity<ProjectMemberResponse> updateMemberRole(@PathVariable("memberId") UUID memberId,
+                                                                  @PathVariable("projectId") UUID projectId,
                                                              @Valid @RequestBody UpdateProjectMemberRequest request){
 
         return ResponseEntity.status(200)
@@ -41,8 +41,8 @@ public class ProjectMemberController {
     }
 
     @DeleteMapping("/{memberId}")
-    public ResponseEntity<Void> removeMember(@PathVariable UUID memberId,
-                                                                  @PathVariable UUID projectId){
+    public ResponseEntity<Void> removeMember(@PathVariable("memberId") UUID memberId,
+                                                                  @PathVariable("projectId") UUID projectId){
         projectMemberService.removeMember(projectId, memberId);
         return ResponseEntity.noContent().build();
     }

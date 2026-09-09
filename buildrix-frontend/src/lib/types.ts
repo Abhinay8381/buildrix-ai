@@ -1,14 +1,14 @@
 export interface LoginCredentials {
-  username: string;
+  email: string;
   password: string;
 }
 
 export interface LoginResponse {
-  token: string;
-  projectId: string;
-  user?: {
-    id: number;
-    username: string;
+  accessToken: string;
+  refreshToken: string;
+  user: {
+    id: string;
+    email: string;
     name: string;
   };
 }
@@ -56,7 +56,7 @@ export interface ChatMessage {
 }
 
 export interface ProjectSummaryResponse {
-  id: number;
+  id: string;
   name: string;
   description?: string;
   thumbnailUrl?: string; // Optional URL for project thumbnail
@@ -65,7 +65,7 @@ export interface ProjectSummaryResponse {
 }
 
 export interface ProjectResponse {
-  id: number;
+  id: string;
   name: string;
   role?: ProjectRole; // Added to check user's permission in the project
   createdAt: string;
@@ -79,30 +79,30 @@ export interface ProjectRequest {
 export type ProjectRole = 'OWNER' | 'EDITOR' | 'VIEWER';
 
 export interface ProjectMember {
-  userId: number; // Changed to number based on schema
-  username: string; // The email/username
+  userId: string;
+  email: string;
   name?: string;
   role: ProjectRole;
   invitedAt?: string;
 }
 
 export interface InviteMemberRequest {
-  username: string;
+  email: string;
   role: ProjectRole;
 }
 
 export interface SignupRequest {
-  username: string;
+  email: string;
   name: string;
   password: string;
 }
 
 export interface AuthResponse {
-  token: string;
+  accessToken: string;
+  refreshToken: string;
   user: {
-    id: number;
-    username: string;
+    id: string;
+    email: string;
     name: string;
-    plan?: any;
   };
 }

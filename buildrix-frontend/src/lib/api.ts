@@ -2,11 +2,20 @@ import { ChatMessage, DeployResponse, FileNode, LoginCredentials, LoginResponse,
 
 const BASE_URL = "http://localhost:8080";
 
-export const getAuthToken = () => localStorage.getItem("auth_token");
+export const getAuthToken = () => localStorage.getItem("access_token");
+export const getRefreshToken = () => localStorage.getItem("refresh_token");
 
-export const setAuthToken = (token: string) => localStorage.setItem("auth_token", token);
+export const setAuthToken = (accessToken: string, refreshToken?: string) => {
+  localStorage.setItem("access_token", accessToken);
+  if (refreshToken) {
+    localStorage.setItem("refresh_token", refreshToken);
+  }
+};
 
-export const removeAuthToken = () => localStorage.removeItem("auth_token");
+export const removeAuthToken = () => {
+  localStorage.removeItem("access_token");
+  localStorage.removeItem("refresh_token");
+};
 
 export const isAuthenticated = () => !!getAuthToken();
 
@@ -15,12 +24,44 @@ const getAuthHeaders = (): HeadersInit => {
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
+// Helper for authenticated API calls with automatic 401 token refresh retry
+async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
+  let headers = {
+    ...getAuthHeaders(),
+    ...(options.headers || {}),
+  };
+
+  let response = await fetch(url, { ...options, headers });
+
+  if (response.status === 401) {
+    try {
+      // Attempt to refresh access token using refresh token
+      await api.refreshToken();
+      // Retry original request with new access token
+      headers = {
+        ...getAuthHeaders(),
+        ...(options.headers || {}),
+      };
+      response = await fetch(url, { ...options, headers });
+    } catch (refreshError) {
+      // Refresh failed (e.g. refresh token expired) -> clear auth & redirect to login
+      removeAuthToken();
+      removeUserInfo();
+      window.location.href = "/login";
+      throw refreshError;
+    }
+  }
+
+  return response;
+}
+
+
 // User info storage
-export const setUserInfo = (user: { id: number; username: string; name: string }) => {
+export const setUserInfo = (user: { id: string; email: string; name: string }) => {
   localStorage.setItem("user_info", JSON.stringify(user));
 };
 
-export const getUserInfo = (): { id: number; username: string; name: string } | null => {
+export const getUserInfo = (): { id: string; email: string; name: string } | null => {
   const userInfo = localStorage.getItem("user_info");
   return userInfo ? JSON.parse(userInfo) : null;
 };
@@ -95,8 +136,8 @@ function buildFileTree(paths: { path: string }[]): FileNode[] {
 }
 
 export const api = {
-  async login(credentials: LoginCredentials): Promise<LoginResponse> {
-    const response = await fetch(`${BASE_URL}/api/auth/login`, {
+  async login(credentials: LoginCredentials): Promise<AuthResponse> {
+    const response = await fetch(`${BASE_URL}/api/v1/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(credentials),
@@ -111,7 +152,7 @@ export const api = {
   },
 
   async signup(data: SignupRequest): Promise<AuthResponse> {
-    const response = await fetch(`${BASE_URL}/api/auth/signup`, {
+    const response = await fetch(`${BASE_URL}/api/v1/auth/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -125,10 +166,29 @@ export const api = {
     return response.json();
   },
 
-  async getFiles(projectId: string): Promise<FileNode[]> {
-    const response = await fetch(`${BASE_URL}/api/projects/${projectId}/files`, {
-      headers: { ...getAuthHeaders() },
+  async refreshToken(): Promise<AuthResponse> {
+    const refreshToken = getRefreshToken();
+    if (!refreshToken) throw new Error("No refresh token available");
+
+    const response = await fetch(`${BASE_URL}/api/v1/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
     });
+
+    if (!response.ok) {
+      removeAuthToken();
+      removeUserInfo();
+      throw new Error("Token refresh failed");
+    }
+
+    const data: AuthResponse = await response.json();
+    setAuthToken(data.accessToken, data.refreshToken);
+    return data;
+  },
+
+  async getFiles(projectId: string): Promise<FileNode[]> {
+    const response = await fetchWithAuth(`${BASE_URL}/api/v1/projects/${projectId}/files`);
 
     if (!response.ok) {
       throw new Error("Failed to fetch files");
@@ -139,11 +199,8 @@ export const api = {
   },
 
   async getFileContent(projectId: string, path: string): Promise<string> {
-    const response = await fetch(
-      `${BASE_URL}/api/projects/${projectId}/files/content?path=${path}`,
-      {
-        headers: { ...getAuthHeaders() },
-      }
+    const response = await fetchWithAuth(
+      `${BASE_URL}/api/v1/projects/${projectId}/files/content?path=${path}`
     );
 
     const data = await response.json();
@@ -157,9 +214,8 @@ export const api = {
   },
 
   async deploy(projectId: string): Promise<DeployResponse> {
-    const response = await fetch(`${BASE_URL}/api/projects/${projectId}/deploy`, {
+    const response = await fetchWithAuth(`${BASE_URL}/api/v1/projects/${projectId}/deploy`, {
       method: "POST",
-      headers: { ...getAuthHeaders() },
     });
 
     if (!response.ok) {
@@ -170,9 +226,7 @@ export const api = {
   },
 
   async getProjects(): Promise<ProjectSummaryResponse[]> {
-    const response = await fetch(`${BASE_URL}/api/projects`, {
-      headers: { ...getAuthHeaders() },
-    });
+    const response = await fetchWithAuth(`${BASE_URL}/api/v1/projects`);
 
     if (!response.ok) {
       throw new Error("Failed to fetch projects");
@@ -182,9 +236,9 @@ export const api = {
   },
 
   async createProject(name: string): Promise<ProjectSummaryResponse> {
-    const response = await fetch(`${BASE_URL}/api/projects`, {
+    const response = await fetchWithAuth(`${BASE_URL}/api/v1/projects`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name }),
     });
 
@@ -196,9 +250,7 @@ export const api = {
   },
 
   async getProject(id: string): Promise<ProjectResponse> {
-    const response = await fetch(`${BASE_URL}/api/projects/${id}`, {
-      headers: { ...getAuthHeaders() },
-    });
+    const response = await fetchWithAuth(`${BASE_URL}/api/v1/projects/${id}`);
 
     if (!response.ok) {
       throw new Error("Failed to fetch project");
@@ -208,9 +260,9 @@ export const api = {
   },
 
   async updateProject(id: string, name: string): Promise<ProjectResponse> {
-    const response = await fetch(`${BASE_URL}/api/projects/${id}`, {
+    const response = await fetchWithAuth(`${BASE_URL}/api/v1/projects/${id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name }),
     });
 
@@ -222,9 +274,8 @@ export const api = {
   },
 
   async deleteProject(id: string): Promise<void> {
-    const response = await fetch(`${BASE_URL}/api/projects/${id}`, {
+    const response = await fetchWithAuth(`${BASE_URL}/api/v1/projects/${id}`, {
       method: "DELETE",
-      headers: { ...getAuthHeaders() },
     });
 
     if (!response.ok) {
@@ -233,9 +284,7 @@ export const api = {
   },
 
   async downloadProjectZip(id: string): Promise<Blob> {
-    const response = await fetch(`${BASE_URL}/api/projects/${id}/files/download-zip`, {
-      headers: { ...getAuthHeaders() },
-    });
+    const response = await fetchWithAuth(`${BASE_URL}/api/v1/projects/${id}/files/download-zip`);
 
     if (!response.ok) {
       throw new Error("Failed to download project");
@@ -245,34 +294,55 @@ export const api = {
   },
 
   async getProjectMembers(projectId: string): Promise<ProjectMember[]> {
-    const response = await fetch(`${BASE_URL}/api/projects/${projectId}/members`, {
-      headers: { ...getAuthHeaders() },
-    });
+    const response = await fetchWithAuth(`${BASE_URL}/api/v1/projects/${projectId}/members`);
 
     if (!response.ok) {
       throw new Error("Failed to fetch project members");
     }
 
-    return response.json();
+    const data = await response.json();
+    return data.map((m: any) => ({
+      userId: m.userId,
+      email: m.email,
+      name: m.name,
+      role: m.projectRole || m.role,
+      invitedAt: m.invitedAt,
+    }));
   },
 
-  async inviteMember(projectId: string, username: string, role: ProjectRole): Promise<void> {
-    const response = await fetch(`${BASE_URL}/api/projects/${projectId}/members`, {
+  async inviteMember(projectId: string, email: string, role: ProjectRole): Promise<ProjectMember> {
+    const response = await fetchWithAuth(`${BASE_URL}/api/v1/projects/${projectId}/members`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-      body: JSON.stringify({ username, role }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, role }),
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      throw new Error(error || "Failed to invite member");
+      const errorText = await response.text();
+      let message = "Failed to invite member";
+      try {
+        const errorJson = JSON.parse(errorText);
+        message = errorJson.message || errorJson.error || message;
+      } catch {
+        if (errorText) message = errorText;
+      }
+      throw new Error(message);
     }
+
+    const m = await response.json();
+    return {
+      userId: m.userId,
+      email: m.email,
+      name: m.name,
+      role: m.projectRole || m.role,
+      invitedAt: m.invitedAt,
+    };
   },
 
-  async updateMemberRole(projectId: string, userId: number, role: ProjectRole): Promise<void> {
-    const response = await fetch(`${BASE_URL}/api/projects/${projectId}/members/${userId}`, {
+  async updateMemberRole(projectId: string, userId: string, role: ProjectRole): Promise<void> {
+    const response = await fetchWithAuth(`${BASE_URL}/api/v1/projects/${projectId}/members/${userId}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ role }),
     });
 
@@ -281,10 +351,9 @@ export const api = {
     }
   },
 
-  async removeMember(projectId: string, userId: number): Promise<void> {
-    const response = await fetch(`${BASE_URL}/api/projects/${projectId}/members/${userId}`, {
+  async removeMember(projectId: string, userId: string): Promise<void> {
+    const response = await fetchWithAuth(`${BASE_URL}/api/v1/projects/${projectId}/members/${userId}`, {
       method: "DELETE",
-      headers: { ...getAuthHeaders() },
     });
 
     if (!response.ok) {
@@ -293,9 +362,7 @@ export const api = {
   },
 
   async getChatHistory(projectId: string): Promise<ChatMessage[]> {
-    const response = await fetch(`${BASE_URL}/api/chat/projects/${projectId}`, {
-      headers: { ...getAuthHeaders() },
-    });
+    const response = await fetchWithAuth(`${BASE_URL}/api/v1/chat/projects/${projectId}`);
 
     if (!response.ok) {
       throw new Error("Failed to fetch chat history");
@@ -314,9 +381,9 @@ export const api = {
   ) {
     const controller = new AbortController();
 
-    fetch(`${BASE_URL}/api/chat/stream`, {
+    fetchWithAuth(`${BASE_URL}/api/v1/chat/stream`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message, projectId }),
       signal: controller.signal,
     })
@@ -382,3 +449,4 @@ export const api = {
   }
 
 };
+

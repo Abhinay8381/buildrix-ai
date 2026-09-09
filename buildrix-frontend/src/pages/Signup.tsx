@@ -30,8 +30,8 @@ export default function Signup() {
         setIsLoading(true);
 
         try {
-            const response = await api.signup({ name, username: email, password });
-            setAuthToken(response.token);
+            const response = await api.signup({ name, email, password });
+            setAuthToken(response.accessToken, response.refreshToken);
             setUserInfo(response.user);
             toast({
                 title: "Welcome!",
@@ -61,11 +61,11 @@ export default function Signup() {
                 <div className="bg-card border border-border/50 rounded-2xl p-8 shadow-2xl">
                     {/* Logo */}
                     <div className="text-center mb-8">
-                        <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-primary/20 mb-5">
-                            <Sparkles className="w-7 h-7 text-primary" />
+                        <div className="inline-flex items-center justify-center mb-4">
+                            <img src="/assets/buildrix-ai.svg" alt="Buildrix AI Logo" className="w-14 h-14 object-contain" />
                         </div>
-                        <h1 className="text-2xl font-semibold text-foreground mb-2">Create an account</h1>
-                        <p className="text-muted-foreground text-sm">Start building your next big idea</p>
+                        <h1 className="text-2xl font-bold tracking-wider text-primary mb-2 uppercase">Create an account</h1>
+                        <p className="text-muted-foreground text-xs font-mono">Start building with Buildrix AI</p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-5">
