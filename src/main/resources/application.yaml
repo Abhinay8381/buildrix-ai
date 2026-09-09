@@ -14,7 +14,7 @@ spring:
       ddl-auto: update
     properties:
       hibernate:
-        format-sql: true
+        format-sql: false
 
   threads:
     virtual:
@@ -26,8 +26,9 @@ spring:
       base-url: https://openrouter.ai/api/v1
       chat:
         temperature: 0.0
-        model: nvidia/nemotron-3-ultra-550b-a55b:free
-
+        #model: google/gemma-4-26b-a4b-it:free
+        #model: x-ai/grok-code-fast-1
+        model: google/gemini-3-flash-preview
 jwt:
   secret-key: dont-use-in-production4135265253735gdrdgr
 

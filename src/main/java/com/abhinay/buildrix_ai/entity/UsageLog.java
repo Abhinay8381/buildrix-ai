@@ -1,18 +1,28 @@
 package com.abhinay.buildrix_ai.entity;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.*;
+
+import java.time.LocalDate;
+import java.util.UUID;
 
 @Builder
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Entity
+@Table(name = "usage_logs", uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "date"}))
 public class UsageLog extends BaseEntity{
 
-    private User user;
-    private Project project;
-    private String action;
-    private Integer tokensUsed;
-    private Integer durationMs;
-    private String metadata;
+    @Column(name = "user_id", nullable = false)
+    UUID userId;
+
+    @Column(nullable = false)
+    LocalDate date;
+
+    Integer tokensUsed;
 }

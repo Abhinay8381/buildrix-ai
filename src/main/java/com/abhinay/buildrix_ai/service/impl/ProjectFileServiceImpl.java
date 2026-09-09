@@ -2,6 +2,7 @@ package com.abhinay.buildrix_ai.service.impl;
 
 import com.abhinay.buildrix_ai.dto.project.file.FileContentResponse;
 import com.abhinay.buildrix_ai.dto.project.file.FileNode;
+import com.abhinay.buildrix_ai.dto.project.file.FileTreeResponse;
 import com.abhinay.buildrix_ai.entity.Project;
 import com.abhinay.buildrix_ai.entity.ProjectFile;
 import com.abhinay.buildrix_ai.entity.ProjectFileRepository;
@@ -9,11 +10,12 @@ import com.abhinay.buildrix_ai.exceptions.ResourceNotFoundException;
 import com.abhinay.buildrix_ai.mapper.ProjectFileMapper;
 import com.abhinay.buildrix_ai.reporsitory.ProjectRepository;
 import com.abhinay.buildrix_ai.service.ProjectFileService;
+import io.minio.GetObjectArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
+import io.minio.errors.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.coyote.InputBuffer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -21,7 +23,6 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -39,14 +40,30 @@ public class ProjectFileServiceImpl implements ProjectFileService {
     private String projectBucket;
 
     @Override
-    public List<FileNode> getProjectFileTree(UUID projectId) {
+    public FileTreeResponse getProjectFileTree(UUID projectId) {
         List<ProjectFile> projectFiles = projectFileRepository.findByProjectId(projectId);
-        return projectFileMapper.toListOfFileNode(projectFiles);
+        return new FileTreeResponse(projectFileMapper.toListOfFileNode(projectFiles));
     }
 
     @Override
-    public FileContentResponse getFileContent(UUID userId, UUID projectId, String filePath) {
-        return null;
+    public FileContentResponse getFileContent(UUID projectId, String filePath) {
+        String objectName = projectId + "/" + filePath;
+
+        try {
+            InputStream is = minioClient.getObject(
+                    GetObjectArgs.builder()
+                            .bucket(projectBucket)
+                            .object(objectName)
+                            .build()
+            );
+
+            String content =  new String(is.readAllBytes(), StandardCharsets.UTF_8);
+            return new FileContentResponse(filePath, content);
+        } catch (Exception e) {
+            log.warn("Failed to read file {}/{} content", projectId, filePath);
+            throw new RuntimeException("Failed to read file Content", e);
+        }
+
     }
 
     @Override

@@ -4,6 +4,8 @@ import com.abhinay.buildrix_ai.enums.MessageRole;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.List;
+
 @Builder
 @Getter
 @Setter
@@ -29,4 +31,8 @@ public class ChatMessage extends BaseEntity{
 
     @Builder.Default
     private Integer tokensUsed = 0;
+
+    @OneToMany(mappedBy = "chatMessage", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OrderBy("sequenceOrder ASC")
+    List<ChatEvent> events;
 }

@@ -10,7 +10,7 @@ import java.util.UUID;
 public interface ProjectService {
     List<ProjectSummaryResponse> getAllUserProjects();
 
-    ProjectResponse getProjectById(UUID id);
+    ProjectSummaryResponse getProjectById(UUID id);
 
     ProjectResponse createProject(ProjectRequest projectRequest);
 

@@ -9,4 +9,7 @@ public interface UsageService {
     UsageTodayResponse getTodayUsage(UUID userId);
 
     PlanLimitsResponse getUsageLimits(UUID userId);
+
+    void recordTokenUsage(UUID userId, int actualTokens);
+    void checkDailyTokensUsage();
 }

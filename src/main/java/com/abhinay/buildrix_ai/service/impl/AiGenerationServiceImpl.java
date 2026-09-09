@@ -1,13 +1,21 @@
 package com.abhinay.buildrix_ai.service.impl;
 
+import com.abhinay.buildrix_ai.dto.chat.ChatStreamResponse;
+import com.abhinay.buildrix_ai.entity.ChatSession;
+import com.abhinay.buildrix_ai.llm.LLMResponseParser;
 import com.abhinay.buildrix_ai.llm.PromptUtils;
 import com.abhinay.buildrix_ai.llm.advisors.FileTreeAdvisor;
+import com.abhinay.buildrix_ai.llm.tools.CodeGenerationTool;
 import com.abhinay.buildrix_ai.security.AuthUtil;
 import com.abhinay.buildrix_ai.service.AiGenerationService;
+import com.abhinay.buildrix_ai.service.ChatService;
 import com.abhinay.buildrix_ai.service.ProjectFileService;
+import com.abhinay.buildrix_ai.service.UsageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
+import org.springframework.ai.chat.metadata.Usage;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -16,7 +24,7 @@ import reactor.core.scheduler.Schedulers;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.regex.Matcher;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 
@@ -29,68 +37,81 @@ public class AiGenerationServiceImpl implements AiGenerationService {
     private final AuthUtil authUtil;
     private final ProjectFileService projectFileService;
     private final FileTreeAdvisor fileTreeAdvisor;
+    private final ChatService chatService;
+    private final UsageService usageService;
 
-    private static final Pattern FILE_TAG_PATTERN = Pattern.compile("<file path = \"([^\"]+)\">(.*?)</file>", Pattern.DOTALL);
+    //private static final Pattern FILE_TAG_PATTERN = Pattern.compile("<file path = \"([^\"]+)\">(.*?)</file>", Pattern.DOTALL);
 
     @PreAuthorize("@security.canEditProject(#projectId)")
     @Override
-    public Flux<String> streamResponse(String message, UUID projectId) {
+    public Flux<ChatStreamResponse> streamResponse(String message, UUID projectId) {
 
         UUID userId = authUtil.getCurrentUserId();
-        
-        createChatSessionIfNotExists(projectId, userId);
+        usageService.checkDailyTokensUsage();
+
+        ChatSession chatSession = createChatSessionIfNotExists(projectId, userId);
         Map<String, Object> advisorParam = Map.of(
                 "user_id", userId,
                 "project_id", projectId
         );
 
         StringBuilder bufferedResponse = new StringBuilder();
-       return chatClient.
+        CodeGenerationTool codeGenerationTool = new CodeGenerationTool(projectId, projectFileService);
+        AtomicReference<Long> startTime = new AtomicReference<>(System.currentTimeMillis());
+        AtomicReference<Long> endTime = new AtomicReference<>(0L);
+        AtomicReference<Usage> usageRef = new AtomicReference<>();
+        return chatClient.
                 prompt()
-               .system(PromptUtils.CODE_GENERATION_SYSTEM_PROMPT)
-               .user(message)
+                .tools(codeGenerationTool)
+                .system(PromptUtils.CODE_GENERATION_SYSTEM_PROMPT)
+                .user(message)
                 .advisors(
                         advisorSpec -> {
                             advisorSpec.params(advisorParam);
-                            advisorSpec.advisors(fileTreeAdvisor);
+                            advisorSpec.advisors(fileTreeAdvisor, new SimpleLoggerAdvisor());
                         }
                 ).stream()
                 .chatResponse()
-               .doOnNext(chatResponse -> {
-                   bufferedResponse.append(Objects.requireNonNull(
-                           chatResponse.getResult()).getOutput().getText());
-               })
-               .doOnComplete(() -> {
-                           Schedulers.boundedElastic().schedule(() ->
-                                   parseAndSaveFiles(projectId, bufferedResponse.toString()));
-                             }
-                       )
-                .doOnError(error ->{
+                .doOnNext(chatResponse -> {
+
+                    String content = Objects.requireNonNull(
+                            chatResponse.getResult()).getOutput().getText();
+                    if(content != null && !content.isEmpty() && endTime.get() == 0) { // first non-empty chunk received
+                        endTime.set(System.currentTimeMillis());
+                    }
+                    if(chatResponse.getMetadata().getUsage() != null) {
+                        usageRef.set(chatResponse.getMetadata().getUsage());
+                    }
+
+                    bufferedResponse.append(content);
+                })
+                .doOnComplete(() -> {
+                            Schedulers.boundedElastic().schedule(() ->{
+                                long duration = (endTime.get() - startTime.get()) /  1000;
+                                finalizeChats(message, chatSession, bufferedResponse.toString(),
+                                        duration, usageRef.get());
+                            });
+                                    //parseAndSaveFiles(projectId, bufferedResponse.toString()));
+                        }
+                )
+                .doOnError(error -> {
                     log.warn("Error during chat stream from LLM for projectId: {}", projectId, error);
                 })
-               .map(chatResponse -> Objects.requireNonNull(
-                       Objects.requireNonNull(chatResponse.getResult()).getOutput().getText()));
+                .map(chatResponse -> new ChatStreamResponse(Objects.requireNonNull(
+                        Objects.requireNonNull(chatResponse.getResult()).getOutput().getText())));
 
     }
 
-    private void parseAndSaveFiles(UUID projectId, String response) {
-//        String dummy = """
-//                <message>The LLM message</message>
-//
-//                <file path = "/src/App.jsx">
-//                import ......
-//                ..... actual file code
-//                </file>
-//                """;
-        Matcher matcher = FILE_TAG_PATTERN.matcher(response);
-        while (matcher.find()){
-            String filePath = matcher.group(1);
-            String content = matcher.group(2).trim();
 
-            projectFileService.saveFile(projectId, filePath, content);
-        }
+    private ChatSession createChatSessionIfNotExists(UUID projectId, UUID userId) {
+        return chatService.createChatSessionIfNotExists(projectId, userId);
     }
 
-    private void createChatSessionIfNotExists(UUID projectId, UUID userId) {
+    private void finalizeChats(String userMessage,
+                               ChatSession chatSession,
+                               String fullText, Long duration, Usage usage) {
+        chatService.finalizeChats(userMessage,
+                 chatSession,
+                 fullText,  duration,  usage);
     }
 }

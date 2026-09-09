@@ -29,10 +29,10 @@ public class FileTreeAdvisor implements StreamAdvisor {
     public Flux<ChatClientResponse> adviseStream(ChatClientRequest request,
                                                  StreamAdvisorChain streamAdvisorChain) {
         Map<String, Object> context = request.context();
-        UUID projectId = context.get("projectId") != null
-                ? UUID.fromString(context.get("projectId").toString()) : null;
+        UUID projectId = context.get("project_id") != null
+                ? UUID.fromString(context.get("project_id").toString()) : null;
         ChatClientRequest augmentedRequest = augmentRequestWithFileTree(request, projectId);
-        return streamAdvisorChain.nextStream(request);
+        return streamAdvisorChain.nextStream(augmentedRequest);
     }
 
     private ChatClientRequest augmentRequestWithFileTree(ChatClientRequest request, UUID projectId) {
@@ -44,7 +44,7 @@ public class FileTreeAdvisor implements StreamAdvisor {
                                         .orElse(null);
 
         List<Message> userMessages = incomingMessages.stream()
-                        .filter(message -> message.getMessageType() != MessageType.USER)
+                        .filter(message -> message.getMessageType() != MessageType.SYSTEM)
                                 .toList();
 
         List<Message> allMessages = new ArrayList<>();
@@ -52,7 +52,7 @@ public class FileTreeAdvisor implements StreamAdvisor {
         if(systemMessage != null)
             allMessages.add(systemMessage);
 
-        List<FileNode> fileTreeNodes =  projectFileService.getProjectFileTree(projectId);
+        List<FileNode> fileTreeNodes =  projectFileService.getProjectFileTree(projectId).files();
         String fileTreeContext = "\n\n ----- FILE_TREE ----\n" + fileTreeNodes.toString();
 
         allMessages.add(new SystemMessage(fileTreeContext));
