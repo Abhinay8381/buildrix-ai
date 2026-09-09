@@ -23,6 +23,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -54,10 +55,9 @@ public class ProjectFileServiceImpl implements ProjectFileService {
                     GetObjectArgs.builder()
                             .bucket(projectBucket)
                             .object(objectName)
-                            .build()
-            );
+                            .build());
 
-            String content =  new String(is.readAllBytes(), StandardCharsets.UTF_8);
+            String content = new String(is.readAllBytes(), StandardCharsets.UTF_8);
             return new FileContentResponse(filePath, content);
         } catch (Exception e) {
             log.warn("Failed to read file {}/{} content", projectId, filePath);
@@ -72,7 +72,7 @@ public class ProjectFileServiceImpl implements ProjectFileService {
         Project project = projectRepository.findById(projectId).orElseThrow(
                 () -> new ResourceNotFoundException("Project", projectId.toString()));
 
-        String cleanPath = filePath.startsWith("/")? filePath.substring(1): filePath;
+        String cleanPath = filePath.startsWith("/") ? filePath.substring(1) : filePath;
         String objectKey = projectId + "/" + cleanPath;
 
         try {
@@ -92,7 +92,7 @@ public class ProjectFileServiceImpl implements ProjectFileService {
                             .path(cleanPath)
                             .minioObjectKey(objectKey) // Use the key we generated
                             .build());
-
+            projectFile.setUpdatedAt(Instant.now());
             projectFileRepository.save(projectFile);
             log.info("Saved file: {}", objectKey);
         } catch (Exception e) {
@@ -103,10 +103,14 @@ public class ProjectFileServiceImpl implements ProjectFileService {
 
     private String determineContentType(String path) {
         String type = URLConnection.guessContentTypeFromName(path);
-        if (type != null) return type;
-        if (path.endsWith(".jsx") || path.endsWith(".ts") || path.endsWith(".tsx")) return "text/javascript";
-        if (path.endsWith(".json")) return "application/json";
-        if (path.endsWith(".css")) return "text/css";
+        if (type != null)
+            return type;
+        if (path.endsWith(".jsx") || path.endsWith(".ts") || path.endsWith(".tsx"))
+            return "text/javascript";
+        if (path.endsWith(".json"))
+            return "application/json";
+        if (path.endsWith(".css"))
+            return "text/css";
 
         return "text/plain";
     }

@@ -21,16 +21,28 @@ public class AuthUtil {
     @Value("${jwt.secret-key}")
     private String jwtKey;
 
-    private SecretKey getSecretKey(){
+    private SecretKey getSecretKey() {
         return Keys.hmacShaKeyFor(jwtKey.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateToken(User user){
+    public String generateAccessToken(User user) {
         return Jwts.builder()
                 .subject(user.getEmail())
                 .claim("userId", user.getId().toString())
+                .claim("type", "ACCESS")
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 10))
+                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60)) // 1 Hour
+                .signWith(getSecretKey())
+                .compact();
+    }
+
+    public String generateRefreshToken(User user) {
+        return Jwts.builder()
+                .subject(user.getEmail())
+                .claim("userId", user.getId().toString())
+                .claim("type", "REFRESH")
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24)) // 24 Hours
                 .signWith(getSecretKey())
                 .compact();
     }
@@ -43,10 +55,11 @@ public class AuthUtil {
         return new JwtUserPrincipal(claims.getSubject(), UUID.fromString(claims.get("userId", String.class)));
     }
 
-    public UUID getCurrentUserId(){
+    public UUID getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if(authentication == null || !(authentication.getPrincipal() instanceof JwtUserPrincipal))
+        if (authentication == null || !(authentication.getPrincipal() instanceof JwtUserPrincipal))
             throw new AuthenticationCredentialsNotFoundException("No JWT Found");
         return ((JwtUserPrincipal) authentication.getPrincipal()).userId();
     }
 }
+
