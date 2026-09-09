@@ -47,19 +47,20 @@ export function ProjectView() {
     }
   }, [navigate]);
 
-  // Load chat history on mount
+  // Load project data and chat history on mount
   useEffect(() => {
     if (!projectId) return;
 
     const loadData = async () => {
       setIsLoadingHistory(true);
       try {
-        const [history, projectData] = await Promise.all([
-          api.getChatHistory(projectId),
-          api.getProject(projectId)
-        ]);
+        // Fetch project info first to ensure user role is available
+        const projectData = await api.getProject(projectId);
+        setProject(projectData);
 
-        const formattedMessages: ChatMessage[] = history.map((msg) => ({
+        // Fetch chat history safely (won't crash if empty or not found)
+        const history = await api.getChatHistory(projectId).catch(() => []);
+        const formattedMessages: ChatMessage[] = (history || []).map((msg) => ({
           id: msg.id.toString(),
           role: msg.role === "USER" ? "user" : "assistant",
           content: msg.content,
@@ -67,7 +68,6 @@ export function ProjectView() {
           events: msg.events,
         }));
         setMessages(formattedMessages);
-        setProject(projectData);
       } catch (error) {
         console.error("Failed to load project data:", error);
         toast({
@@ -90,7 +90,7 @@ export function ProjectView() {
   };
 
   const handleSendMessage = useCallback((content: string) => {
-    if (!projectId) return;
+    if (!projectId || project?.role === 'VIEWER') return;
 
     // Reset edited files tracker
     currentEditedFilesRef.current = [];
