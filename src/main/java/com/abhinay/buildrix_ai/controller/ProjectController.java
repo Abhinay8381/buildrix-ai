@@ -1,8 +1,10 @@
 package com.abhinay.buildrix_ai.controller;
 
+import com.abhinay.buildrix_ai.dto.deploy.DeploymentResponse;
 import com.abhinay.buildrix_ai.dto.project.ProjectRequest;
 import com.abhinay.buildrix_ai.dto.project.ProjectResponse;
 import com.abhinay.buildrix_ai.dto.project.ProjectSummaryResponse;
+import com.abhinay.buildrix_ai.service.DeploymentService;
 import com.abhinay.buildrix_ai.service.ProjectService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +23,7 @@ public class ProjectController {
     private static final UUID userId = UUID.fromString("32aea559-aed5-45c5-bfec-23dcc3ef70c5");
 
     private final ProjectService projectService;
+    private final DeploymentService deploymentService;
 
     @GetMapping()
     public ResponseEntity<List<ProjectSummaryResponse>> getAllProjects(){
@@ -48,6 +51,11 @@ public class ProjectController {
     public ResponseEntity<ProjectResponse> updateProject(@Valid @RequestBody  ProjectRequest projectRequest,
                                                          @PathVariable UUID id){
         return ResponseEntity.ok(projectService.updateProject(id, projectRequest));
+    }
+
+    @PostMapping("/{id}/deploy")
+    public ResponseEntity<DeploymentResponse> deployProject(@PathVariable UUID id) {
+        return ResponseEntity.ok(deploymentService.deploy(id));
     }
 
 }
