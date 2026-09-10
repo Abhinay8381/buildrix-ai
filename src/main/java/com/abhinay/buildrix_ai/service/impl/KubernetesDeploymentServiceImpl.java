@@ -3,12 +3,12 @@ package com.abhinay.buildrix_ai.service.impl;
 import com.abhinay.buildrix_ai.dto.deploy.DeploymentResponse;
 import com.abhinay.buildrix_ai.service.DeploymentService;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.PodStatus;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.ExecListener;
 import io.fabric8.kubernetes.client.dsl.ExecWatch;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 public class KubernetesDeploymentServiceImpl implements DeploymentService {
 
     private final KubernetesClient kubernetesClient;
+    private final StringRedisTemplate stringRedisTemplate;
 
     private static final String NAMESPACE = "buildrix-apps";
     private static final String POOL_LABEL = "status";
@@ -34,11 +35,12 @@ public class KubernetesDeploymentServiceImpl implements DeploymentService {
 
     @Override
     public DeploymentResponse deploy(UUID projectId) {
-        String domain = "project-" + projectId + "app.domain.com";
+        String domain = "project-" + projectId + ".127.0.0.1.nip.io";
 
         Pod pod = findActivePod(projectId);
 
         if (pod != null) {
+            registerRoute(pod, domain);
             return new DeploymentResponse("http://" + domain + ":" + REVERSE_PROXY_PORT);
         }
         return claimAndStartNewPod(projectId, domain);
@@ -69,14 +71,20 @@ public class KubernetesDeploymentServiceImpl implements DeploymentService {
                     projectId.toString());
 
             log.info("Starting initial sync for project {} in pod {}", projectId, podName);
-            execCommand(podName, SYNCER_CONTAINER, initialSyncCmd);
+            execCommand(podName, SYNCER_CONTAINER, "sh", "-c", initialSyncCmd);
 
-            String startCmd = "npm install && nohup npm run dev -- --host 0.0.0.0 --port 5173 > /app/dev.log 2>&1 &";
+            String watchCmd = String.format(
+                    "nohup mc mirror --overwrite --watch myminio/projects/%s/ /app/ > /app/sync.log 2>&1 &",
+                    projectId);
+            execCommand(podName, SYNCER_CONTAINER, "sh", "-c", watchCmd);
+
+            String startCmd = "cd /app && npm install && nohup npm run dev -- --host 0.0.0.0 --port 5173 > /app/dev.log 2>&1 &";
 
             log.info("Starting dev server for project {}...", projectId);
-            execCommand(podName, RUNNER_CONTAINER, startCmd);
+            execCommand(podName, RUNNER_CONTAINER, "sh", "-c", startCmd);
 
             log.info("Deployment successful: http://{}:{}", domain, REVERSE_PROXY_PORT);
+            registerRoute(pod, domain);
             return new DeploymentResponse("http://" + domain + ":" + REVERSE_PROXY_PORT);
 
         } catch (Exception e) {
@@ -124,5 +132,23 @@ public class KubernetesDeploymentServiceImpl implements DeploymentService {
                 .filter(pod -> pod.getStatus().getPhase().equals("Running"))
                 .findFirst()
                 .orElse(null);
+    }
+
+    private void registerRoute(Pod pod, String domain) {
+        String podIp = (pod != null && pod.getStatus() != null) ? pod.getStatus().getPodIP() : null;
+
+        if (podIp == null && pod != null) {
+            Pod fresh = kubernetesClient.pods().inNamespace(NAMESPACE).withName(pod.getMetadata().getName()).get();
+            if (fresh != null && fresh.getStatus() != null) {
+                podIp = fresh.getStatus().getPodIP();
+            }
+        }
+
+        if (podIp == null) {
+            throw new RuntimeException("Pod is running but has no IP");
+        }
+
+        log.info("Registered Redis route -> route:{} = {}:5173", domain, podIp);
+        stringRedisTemplate.opsForValue().set("route:" + domain, podIp + ":5173", 6, TimeUnit.HOURS);
     }
 }

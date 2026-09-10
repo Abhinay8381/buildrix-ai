@@ -6,5 +6,5 @@ import java.util.UUID;
 
 public interface DeploymentService {
 
-    public DeploymentResponse deploy(UUID projectId);
+     DeploymentResponse deploy(UUID projectId);
 }

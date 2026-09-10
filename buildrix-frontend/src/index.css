@@ -66,25 +66,7 @@
     @apply bg-background text-foreground antialiased;
     font-family: 'Space Grotesk', 'Fira Code', monospace;
     background-image:
-      radial-gradient(ellipse at top, rgba(255, 170, 0, 0.05), transparent 70%),
-      linear-gradient(rgba(18, 16, 26, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
-    background-size: 100% 100%, 100% 4px;
-  }
-
-  /* Scanline CRT Overlay */
-  body::before {
-    content: " ";
-    display: block;
-    position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
-    background: linear-gradient(rgba(18, 16, 26, 0) 50%, rgba(0, 0, 0, 0.15) 50%);
-    background-size: 100% 4px;
-    z-index: 9999;
-    pointer-events: none;
-    opacity: 0.6;
+      radial-gradient(ellipse at top, rgba(255, 170, 0, 0.05), transparent 70%);
   }
 
   /* Scrollbar styling */

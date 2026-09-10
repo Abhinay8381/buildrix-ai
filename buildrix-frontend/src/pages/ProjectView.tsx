@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Code, Sparkles, LogOut, RotateCcw, Maximize2, RefreshCw, MoreVertical, Trash, Download, Edit } from "lucide-react";
+import { Code, Sparkles, LogOut, RotateCcw, Maximize2, RefreshCw, MoreVertical, Trash, Download, Edit, Home } from "lucide-react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { ChatPanel, ChatMessage } from "@/components/ChatPanel";
 import { CodePanel } from "@/components/CodePanel";
@@ -261,6 +261,21 @@ Please analyze this error and fix the code to resolve it.`;
     }
   };
 
+  const [isPublishing, setIsPublishing] = useState(false);
+
+  const handlePublish = async () => {
+    if (!projectId) return;
+    setIsPublishing(true);
+    try {
+      const res = await api.deploy(projectId);
+      toast({ title: "Deployment triggered", description: `Assigned preview URL: ${res.previewUrl}` });
+    } catch (error: any) {
+      toast({ title: "Publish failed", description: error.message || "Failed to deploy project", variant: "destructive" });
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
   const handleRenameSubmit = async () => {
     if (!projectId || !renameName.trim()) return;
 
@@ -288,6 +303,17 @@ Please analyze this error and fix the code to resolve it.`;
       {/* Header */}
       <header className="h-12 shrink-0 border-b border-border/50 bg-panel flex items-center justify-between px-3">
         <div className="flex items-center gap-2 font-mono">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/projects")}
+            className="h-7 px-2 border-2 border-foreground bg-background hover:bg-muted font-bold text-xs uppercase tracking-wide flex items-center gap-1.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
+            title="All Projects"
+          >
+            <Home className="w-3.5 h-3.5 text-primary" />
+            <span className="hidden sm:inline">Projects</span>
+          </Button>
+
           {project ? (
             <>
               <div className="w-7 h-7 bg-[#e85d32] border border-[#241d17] flex items-center justify-center shadow-[2px_2px_0_#241d17]">
@@ -397,8 +423,13 @@ Please analyze this error and fix the code to resolve it.`;
               <Button variant="outline" size="sm" className="h-8 text-xs">
                 Upgrade
               </Button>
-              <Button size="sm" className="h-8 text-xs bg-primary hover:bg-primary/90">
-                Publish
+              <Button
+                size="sm"
+                onClick={handlePublish}
+                disabled={isPublishing}
+                className="h-8 text-xs bg-primary hover:bg-primary/90 font-bold uppercase tracking-wider border border-foreground shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
+              >
+                {isPublishing ? "Deploying..." : "Publish"}
               </Button>
             </>
           )}

@@ -219,7 +219,15 @@ export const api = {
     });
 
     if (!response.ok) {
-      throw new Error("Deployment failed");
+      const errorText = await response.text();
+      let message = "Deployment failed";
+      try {
+        const errorJson = JSON.parse(errorText);
+        message = errorJson.message || errorJson.error || message;
+      } catch {
+        if (errorText) message = errorText;
+      }
+      throw new Error(message);
     }
 
     return response.json();
