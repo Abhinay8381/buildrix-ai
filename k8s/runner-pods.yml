@@ -26,7 +26,7 @@ spec:
         - name: runner
           image: node:20-alpine
           workingDir: /app
-          command: ["/bin/sh", "-c", "sleep infinity"]
+          command: ["/bin/sh", "-c", "apk add --no-cache git && sleep infinity"]
           volumeMounts:
             - name: workspace
               mountPath: /app
@@ -40,7 +40,7 @@ spec:
 
         # 2. THE SYNCER (File Sync)
         - name: syncer
-          image: minio/mc
+          image: quay.io/minio/mc:latest
           command: ["/bin/sh", "-c", "sleep infinity"]
           env:
             - name: MC_HOST_myminio

@@ -116,9 +116,77 @@ public class ReverseProxyController {
         } catch (Exception e) {
             log.error("Proxy Error for {}: {}", hostname, e.getMessage());
             if (!response.isCommitted()) {
-                response.setStatus(HttpStatus.BAD_GATEWAY.value());
-                response.setContentType("text/plain");
-                response.getWriter().write("Vite server unavailable...");
+                response.setStatus(HttpStatus.SERVICE_UNAVAILABLE.value());
+                response.setHeader("Retry-After", "3");
+                response.setContentType("text/html;charset=UTF-8");
+                String html = """
+                    <!DOCTYPE html>
+                    <html lang="en">
+                    <head>
+                        <meta charset="UTF-8">
+                        <meta http-equiv="refresh" content="3">
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <title>Starting Dev Server...</title>
+                        <style>
+                            body {
+                                margin: 0;
+                                padding: 0;
+                                background-color: #0f172a;
+                                color: #f8fafc;
+                                font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                                display: flex;
+                                flex-direction: column;
+                                align-items: center;
+                                justify-content: center;
+                                height: 100vh;
+                                overflow: hidden;
+                            }
+                            .card {
+                                background-color: #1e293b;
+                                border: 1px solid #334155;
+                                border-radius: 12px;
+                                padding: 32px 40px;
+                                text-align: center;
+                                max-width: 400px;
+                                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+                            }
+                            .spinner {
+                                width: 44px;
+                                height: 44px;
+                                border: 4px solid #334155;
+                                border-top: 4px solid #6366f1;
+                                border-radius: 50%;
+                                animation: spin 1s linear infinite;
+                                margin: 0 auto 20px auto;
+                            }
+                            @keyframes spin {
+                                0% { transform: rotate(0deg); }
+                                100% { transform: rotate(360deg); }
+                            }
+                            h2 {
+                                font-size: 18px;
+                                font-weight: 600;
+                                margin: 0 0 8px 0;
+                                color: #f1f5f9;
+                            }
+                            p {
+                                font-size: 13px;
+                                color: #94a3b8;
+                                margin: 0;
+                                line-height: 1.5;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="card">
+                            <div class="spinner"></div>
+                            <h2>Setting up Preview Environment</h2>
+                            <p>Syncing project files and starting Vite server... Page will auto-reload in a few seconds.</p>
+                        </div>
+                    </body>
+                    </html>
+                    """;
+                response.getWriter().write(html);
             }
         }
     }

@@ -13,25 +13,27 @@ interface PreviewPanelProps {
   onFix: (error: RuntimeError) => void;
 }
 
-const getPreviewUrlKey = (id: string) => `${PREVIEW_URL_KEY}_${id}`;
-
 export function PreviewPanel({ projectId, runtimeError, onDismiss, onFix }: PreviewPanelProps) {
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const previewStorageKey = `${PREVIEW_URL_KEY}_${projectId}`;
+
+  const [previewUrl, setPreviewUrl] = useState<string | null>(() => {
+    return localStorage.getItem(previewStorageKey);
+  });
   const [isDeploying, setIsDeploying] = useState(false);
   const { toast } = useToast();
 
-  // Load previewUrl from localStorage when projectId changes
+  // Reset previewUrl when projectId changes
   useEffect(() => {
-    const savedUrl = localStorage.getItem(getPreviewUrlKey(projectId));
-    setPreviewUrl(savedUrl || null);
-  }, [projectId]);
+    const savedUrl = localStorage.getItem(previewStorageKey);
+    setPreviewUrl(savedUrl);
+  }, [projectId, previewStorageKey]);
 
-  // Store previewUrl in localStorage per project when it changes
+  // Store previewUrl in project-specific localStorage key when updated
   useEffect(() => {
-    if (previewUrl && projectId) {
-      localStorage.setItem(getPreviewUrlKey(projectId), previewUrl);
+    if (previewUrl) {
+      localStorage.setItem(previewStorageKey, previewUrl);
     }
-  }, [previewUrl, projectId]);
+  }, [previewUrl, previewStorageKey]);
 
   const handleDeploy = async () => {
     setIsDeploying(true);
