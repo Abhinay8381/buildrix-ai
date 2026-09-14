@@ -1,78 +1,55 @@
 # Buildrix AI 🚀
 
-**Buildrix AI** is an AI-powered web application generator and deployment platform built with **Spring Boot 4**, **Java 25**, and **Spring AI**. It enables developers and users to prompt, build, render, and deploy full-stack web applications dynamically with live Kubernetes-backed preview environments.
+**Buildrix AI** is an AI-powered web application generator and deployment platform built with **Spring Boot 4**, **Java 25**, and **Spring AI**. It enables users to prompt, generate, edit, and preview interactive **React / Vite** applications dynamically with live **Kubernetes-backed runner environments**.
 
 ---
 
 ## 🏗️ Architecture Overview
 
-The system is designed with a **Modular Monolith First** strategy, laying down strict domain boundaries to seamlessly transition into a **Microservices Architecture** (API Gateway, Intelligence Service, Workspace Service, Execution Service, Chat Service).
+The system follows a **Monolith First** design approach, with decoupled domain modules ready to evolve into microservices:
 
 ```
-                      +-----------------------------+
-                      |     Spring Cloud Gateway    |
-                      +--------------+--------------+
+                                  +------------------------------------+
+                                  |     Buildrix React Frontend        |
+                                  |   (Editor, Chat, Preview Iframe)   |
+                                  +-----------------+------------------+
+                                                    |
+                                     +--------------+--------------+
+                                     |                             |
+                      +--------------v--------------+ +------------v----------------+
+                      |   Buildrix AI Main Backend  | | Buildrix Proxy Service      |
+                      |   (Spring Boot - Port 8080) | | (Reverse Proxy - Port 8090)  |
+                      +--------------+--------------+ +------------+----------------+
+                                     |                             |
+     +-------------------------------+-------------------+         | Reads Route IP
+     |                               |                   |         v
++----v-------+               +-------v-------+   +-------v---------+-----+
+| PostgreSQL |               | MinIO Storage |   | Redis (Route Cache)   |
+| (Database) |               | (Code Bucket) |   +-----------------------+
++------------+               +-------+-------+
                                      |
-               +---------------------+---------------------+
-               |                                           |
-+--------------v--------------+             +--------------v--------------+
-|     Workspace & Auth Service |             |     Intelligence Service    |
-|   (JWT, Projects, Members)   |             | (Spring AI, LLM Tools, RAG) |
-+--------------+--------------+             +--------------+--------------+
-               |                                           |
-+--------------v--------------+             +--------------v--------------+
-|      Billing & Stripe       |             |  Qdrant Vector DB / MinIO   |
-|   (Webhooks, Subscriptions) |             +--------------+--------------+
-+-----------------------------+                            |
-                                            +--------------v--------------+
-                                            |  Kubernetes Preview Pods    |
-                                            | (Dynamic Ingress & Execution)|
-                                            +-----------------------------+
+                                     v
+                      +--------------+------------------+
+                      | Kubernetes Pod Runner Pool      |
+                      |  - Container 1: Node.js (Vite)   |
+                      |  - Container 2: MinIO mc Syncer |
+                      +---------------------------------+
 ```
 
 ---
 
-## 🌟 Core System Features
+## 🌟 Accomplished Features & System Capabilities
 
-### 🔐 1. Authentication & Security
-- Stateless **JWT Authentication** (`JwtAuthFilter`) with custom principal context (`JwtUserPrincipal`).
-- Role-Based Access Control (RBAC) supporting `OWNER`, `EDITOR`, `VIEWER`.
-- Secure Password Hashing with BCrypt & Spring Security Filter Chains.
-
-### 📁 2. Project & Workspace Management
-- Multitenant project creation & ownership control.
-- Project membership, roles, permissions, and soft-delete handling.
-- Multi-file code management structure mapped to MinIO storage key instances.
-
-### 💳 3. Billing & Subscription Management (Stripe Integration)
-- **Stripe Checkout API Integration** for handling subscription plans dynamically.
-- **Event-Driven Webhook Router (`StripeEventRouter`)**: Clean implementation of the **Strategy Pattern** for processing asynchronous Stripe webhooks:
-  - `checkout.session.completed`
-  - `invoice.paid`
-  - `customer.subscription.created` / `customer.subscription.updated` / `customer.subscription.deleted`
-  - `invoice.payment_failed`
-- **Idempotent Out-of-Order Webhook Processing**: Fallback lookup mechanisms to handle Stripe events arriving out of chronological order.
-
-### ⚙️ 4. AI & Infrastructure (In Development Roadmap)
-- **Spring AI & RAG Engine**: Integration with Qdrant Vector DB for codebase context ingestion.
-- **Live Kubernetes Preview Execution**: Dynamic creation of Kubernetes Namespaces & Pods for running Vite/React previews.
-
----
-
-## 📊 Database Schema (ER Diagram)
-
-The underlying relational schema handles Users, Projects, Members, Subscriptions, Plans, Usage Logs, Chat Sessions, Messages, Files, and Kubernetes Previews:
-
-```
-[User] <--- (1:N) ---> [Project] <--- (1:N) ---> [ProjectFile]
-  |                       |                       |
-  | (1:N)                 | (1:N)                 | (1:N)
-  v                       v                       v
-[Subscription] <---> [ProjectMember]         [Preview (K8s)]
-  |                       |
-  v                       v
-[Plan]               [ChatSession] <---> [ChatMessage]
-```
+- [x] **Authentication & Security Context**: Stateless JWT Auth filter (`JwtAuthFilter`) with custom principal mapping & RBAC (`OWNER`, `EDITOR`, `VIEWER`).
+- [x] **Multitenant Workspace Domain**: Complete project lifecycle, member management, soft deletes, and entity lifecycle auditing.
+- [x] **Production Stripe Billing Engine**: Checkout API integration, Event-driven Webhook Router (`StripeEventRouter`) using the Strategy Pattern with built-in idempotency.
+- [x] **Spring AI Integration & OpenRouter Provider**: Connected Spring AI with OpenRouter API for streaming LLM generation.
+- [x] **FileTree Context Advisor (`FileTreeAdvisor`)**: Intercepts prompt execution to dynamically inject the project file tree structure into the system context.
+- [x] **Precision Tool Calling (`read_files`)**: Uses Spring AI `@Tool` function calls so the LLM selectively reads source files before making code edits.
+- [x] **Streaming XML Code Generation Protocol**: Streams real-time tokens via SSE structured in `<tool>`, `<message>`, and `<file>` XML blocks.
+- [x] **Dynamic Kubernetes Sandbox & Runner Pool**: Pre-warmed `runner-pool` deployment in Kubernetes with dual-container pods (Node.js runtime + MinIO `mc` syncer).
+- [x] **Spring Boot Reverse Proxy & Redis Gateway**: Built a reverse proxy service (`proxy-service`) resolving dynamic subdomains (`project-<id>.127.0.0.1.nip.io:8090`) to dynamic Pod IPs using Redis caching.
+- [x] **Interactive Frontend Application**: React + Vite + TypeScript frontend showcasing live preview rendering in an iframe.
 
 ---
 
@@ -81,55 +58,147 @@ The underlying relational schema handles Users, Projects, Members, Subscriptions
 | Layer | Technology |
 | :--- | :--- |
 | **Language & Runtime** | Java 25 (Virtual Threads Enabled) |
-| **Framework** | Spring Boot 4.x, Spring Web, Spring Security |
-| **AI Integration** | Spring AI, Qdrant Vector DB |
-| **Database & Persistence** | PostgreSQL 18, Spring Data JPA, Hibernate 7, MapStruct |
-| **Object Storage** | MinIO Storage |
-| **Payments** | Stripe Java SDK (Checkout & Webhooks) |
-| **Container Orchestration**| Kubernetes (Dynamic Pod Execution & Ingress) |
-| **Build Tool** | Apache Maven |
+| **Backend Frameworks** | Spring Boot 4.x, Spring Web, Spring Security |
+| **AI Integration** | Spring AI, OpenRouter API (GPT-5.6 / Llama / Claude) |
+| **Database & Caching** | PostgreSQL 18, Redis 7, Hibernate 7 |
+| **Object Storage** | MinIO Object Storage |
+| **Payments** | Stripe Java SDK |
+| **Container Orchestration**| Kubernetes (Kind / Minikube) |
+| **Frontend** | React 18, Vite, TypeScript, Tailwind CSS 4, daisyUI 5 |
 
 ---
 
-## 🚀 Getting Started
+## 💻 Detailed Local Setup & Run Guide
 
 ### Prerequisites
-- Java 25 JDK
-- PostgreSQL 18
-- Docker / Kubernetes (Minikube / k3s)
-- Stripe CLI (for testing webhooks)
+Ensure the following tools are installed on your system:
+- **Java 25 JDK**
+- **Node.js (v20+) & npm**
+- **Docker Desktop / Docker Engine**
+- **Kind (Kubernetes in Docker)** or **Minikube**
+- **kubectl CLI**
 
-### Setup & Run
-1. **Clone the repository:**
+---
+
+### Step 1: Clone the Repository
+```bash
+git clone https://github.com/Abhinay8381/buildrix-ai.git
+cd buildrix-ai
+```
+
+---
+
+### Step 2: Configure API Keys in `application.yaml`
+Open `src/main/resources/application.yaml` and add your actual API keys:
+
+```yaml
+spring:
+  ai:
+    openai:
+      api-key: YOUR_OPENROUTER_API_KEY_HERE   # Replace with your OpenRouter key
+      base-url: https://openrouter.ai/api/v1
+      chat:
+        model: openai/gpt-5.6-luna            # Or choice of OpenRouter model
+
+stripe:
+  api:
+    secret: YOUR_STRIPE_SECRET_KEY_HERE       # (Optional) Stripe Secret Key
+  webhook:
+    secret: YOUR_STRIPE_WEBHOOK_SECRET_HERE   # (Optional) Stripe Webhook Secret
+```
+
+---
+
+### Step 3: Start Infrastructure Containers (PostgreSQL & MinIO)
+
+Run the following commands to start PostgreSQL and MinIO:
+
+```bash
+# 1. Start PostgreSQL (Port 9010)
+docker run -d --name buildrix-postgres \
+  -e POSTGRES_DB=buildrix-DB \
+  -e POSTGRES_USER=user \
+  -e POSTGRES_PASSWORD=password \
+  -p 9010:5432 postgres:18-alpine
+
+# 2. Start MinIO (Ports 9000 & 9001)
+docker run -d --name buildrix-minio \
+  -p 9000:9000 -p 9001:9001 \
+  -e MINIO_ROOT_USER=minioadmin \
+  -e MINIO_ROOT_PASSWORD=minioadmin123 \
+  minio/minio server /data --console-address ":9001"
+```
+
+---
+
+### Step 4: Build & Load the Proxy Service Image into Kind
+
+1. **Build the Proxy Service Docker Image:**
    ```bash
-   git clone https://github.com/Abhinay8381/buildrix-ai.git
-   cd buildrix-ai
+   docker build -t buildrix-proxy:latest -f proxy-service/Dockerfile proxy-service
    ```
 
-2. **Configure Application Properties:**
-   Ensure environment variables or `application.yaml` credentials are set for Database, JWT secret, and Stripe API keys:
-   ```yaml
-   stripe:
-     api:
-       secret: ${STRIPE_API_SECRET}
-     webhook:
-       secret: ${STRIPE_WEBHOOK_SECRET}
+2. **Create the Kind Cluster:**
+   ```bash
+   kind create cluster --name buildrix
    ```
 
-3. **Build & Run:**
+3. **Load the Docker Image into Kind Cluster:**
    ```bash
-   mvn clean package -DskipTests
-   mvn spring-boot:run
+   kind load docker-image buildrix-proxy:latest --name buildrix
    ```
 
 ---
 
-## 📌 Status & Progress
+### Step 5: Deploy Kubernetes Resources
 
-- [x] **Week 1 Foundation**: Project Setup, Base Entity Audit Tracking, JPA Repositories.
-- [x] **Authentication & Security**: Custom JWT Filter & Security Context.
-- [x] **Project Workspace Domain**: Project creation, membership management, soft deletes.
-- [x] **Stripe Billing Integration**: Checkout Session integration, Webhook Strategy Router, Idempotent Subscription Lifecycle.
-- [ ] **Spring AI Integration**: Context retrieval (RAG) and tool calling.
-- [ ] **Kubernetes Execution Engine**: Namespace allocation & live pod deployment for previews.
+Apply all Kubernetes configurations:
 
+```bash
+# Create the Kubernetes namespace
+kubectl create namespace buildrix-apps
+
+# Apply all K8s manifests
+kubectl apply -f k8s/redis.yml -n buildrix-apps
+kubectl apply -f k8s/runner-pods.yml -n buildrix-apps
+kubectl apply -f k8s/proxy-deployment.yml -n buildrix-apps
+```
+
+Verify pods are running:
+```bash
+kubectl get pods -n buildrix-apps
+```
+
+---
+
+### Step 6: Port-Forward Kubernetes Services
+
+Open two separate terminal windows to port-forward Redis and Reverse Proxy:
+
+```bash
+# Terminal 1: Port-Forward Redis to localhost:6379
+kubectl port-forward svc/redis-service 6379:6379 -n buildrix-apps
+
+# Terminal 2: Port-Forward Reverse Proxy to localhost:8090
+kubectl port-forward svc/buildrix-proxy-svc 8090:80 -n buildrix-apps
+```
+
+---
+
+### Step 7: Start Backend & Frontend
+
+1. **Run Buildrix AI Main Backend (Port 8080):**
+   ```bash
+   ./mvnw spring-boot:run
+   ```
+
+2. **Run Frontend Application:**
+   *(In a new terminal window)*
+   ```bash
+   cd buildrix-frontend
+   npm install
+   npm run dev
+   ```
+
+3. **Access App:**
+   Open `http://localhost:8080` (or `http://localhost:5173`) in your browser to start generating, editing, and running React apps live! 🚀

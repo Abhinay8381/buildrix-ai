@@ -27,7 +27,7 @@ spring:
 
   ai:
     openai:
-      api-key: 
+      api-key: ${OPENROUTER_API_KEY:YOUR_OPENROUTER_API_KEY_HERE}
       base-url: https://openrouter.ai/api/v1
       chat:
         temperature: 0.0
@@ -35,13 +35,13 @@ spring:
         #model: x-ai/grok-code-fast-1
         model: openai/gpt-5.6-luna
 jwt:
-  secret-key: dont-use-in-production4135265253735gdrdgr
+  secret-key: ${JWT_SECRET:dont-use-in-production4135265253735gdrdgr}
 
 stripe:
   api:
-    secret: 
+    secret: ${STRIPE_API_SECRET:YOUR_STRIPE_SECRET_KEY_HERE}
   webhook:
-    secret: 
+    secret: ${STRIPE_WEBHOOK_SECRET:YOUR_STRIPE_WEBHOOK_SECRET_HERE}
 
 client:
   url: http://localhost:8080
