@@ -1,11 +1,10 @@
 package com.abhinay.buildrix_ai.service.impl;
 
 import com.abhinay.buildrix_ai.dto.project.file.FileContentResponse;
-import com.abhinay.buildrix_ai.dto.project.file.FileNode;
 import com.abhinay.buildrix_ai.dto.project.file.FileTreeResponse;
 import com.abhinay.buildrix_ai.entity.Project;
 import com.abhinay.buildrix_ai.entity.ProjectFile;
-import com.abhinay.buildrix_ai.entity.ProjectFileRepository;
+import com.abhinay.buildrix_ai.reporsitory.ProjectFileRepository;
 import com.abhinay.buildrix_ai.exceptions.ResourceNotFoundException;
 import com.abhinay.buildrix_ai.mapper.ProjectFileMapper;
 import com.abhinay.buildrix_ai.reporsitory.ProjectRepository;
@@ -13,7 +12,6 @@ import com.abhinay.buildrix_ai.service.ProjectFileService;
 import io.minio.GetObjectArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
-import io.minio.errors.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

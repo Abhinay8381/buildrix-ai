@@ -1,5 +1,6 @@
-package com.abhinay.buildrix_ai.entity;
+package com.abhinay.buildrix_ai.reporsitory;
 
+import com.abhinay.buildrix_ai.entity.ProjectFile;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
